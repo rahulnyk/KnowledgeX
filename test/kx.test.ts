@@ -9,7 +9,7 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import * as kb from "../src/bundle.js";
 import { main } from "../src/cli.js";
 import { createServer } from "../src/mcp.js";
-import { checkCases, loadCases } from "../evals/run.js";
+import { checkCases, loadCases, main as evalsMain } from "../evals/run.js";
 
 const AGENT = "test-agent/1.0";
 
@@ -85,8 +85,16 @@ test("regressions from code review", (t) => {
   assert.equal(kx("guide", "constructor").code, 1);
 });
 
-test("eval cases are valid", () => {
+test("eval cases are valid", async () => {
   assert.deepEqual(checkCases(loadCases()), []);
+  // pnpm passes the `--` from `pnpm run evals -- check` through to the script.
+  const log = console.log;
+  console.log = () => {};
+  try {
+    assert.equal(await evalsMain(["--", "check"]), 0);
+  } finally {
+    console.log = log;
+  }
 });
 
 test("the code and the guides agree", () => {
