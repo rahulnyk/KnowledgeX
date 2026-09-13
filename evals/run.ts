@@ -343,9 +343,10 @@ export function scoreDir(out: string, cases: Case[]): string {
   return text;
 }
 
-async function main(argv: string[]): Promise<number> {
+export async function main(argv: string[]): Promise<number> {
   const { values, positionals } = parseArgs({
-    args: argv,
+    // `npm run evals -- run ...` strips the `--`, but pnpm and yarn pass it through, which would turn every option into a plain argument.
+    args: argv[0] === "--" ? argv.slice(1) : argv,
     allowPositionals: true,
     options: {
       agent: { type: "string" },
