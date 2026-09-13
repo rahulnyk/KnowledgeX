@@ -121,5 +121,5 @@ Claude lists notes that may be out of date, notes that conflict, and notes you'v
 ## Where next
 
 - Curious what Claude is told? Read the [agent guides](../guides/).
-- Using another AI app or the command line? See [Other AI apps and technical users](../README.md#other-ai-apps-and-technical-users).
+- Using another AI app or the command line? See the [technical guide](technical.md).
 - Interested in the reasoning behind KnowledgeX? Read the [design document](design.md).

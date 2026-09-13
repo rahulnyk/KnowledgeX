@@ -49,63 +49,9 @@ Say yes, "only the first", or no. If nothing is worth keeping, Claude won't ask.
 
 ## Other AI apps and technical users
 
-KnowledgeX isn't tied to Claude. The notes use the open [Open Knowledge Format (OKF)](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md), and any AI app that supports MCP servers can connect. These options need [Node.js](https://nodejs.org) 22 or newer.
+KnowledgeX isn't tied to Claude. Any AI app that supports MCP servers can connect with `npx -y knowledgex mcp`, and the `kx` command line (`npm install -g knowledgex`) works for scripts and for coding agents that run shell commands.
 
-**Apps with MCP settings** (for example Cursor or VS Code). Add the server to the app's MCP configuration:
-
-```json
-{
-  "mcpServers": {
-    "knowledgex": {
-      "command": "npx",
-      "args": ["-y", "github:rahulnyk/KnowledgeX", "mcp"],
-      "env": { "KX_BUNDLE": "/path/to/your/notes" }
-    }
-  }
-}
-```
-
-**Claude Code:**
-
-```bash
-claude mcp add knowledgex -- npx -y github:rahulnyk/KnowledgeX mcp
-```
-
-**The `kx` command line**, for scripts and for agents that run shell commands:
-
-```bash
-npm install -g github:rahulnyk/KnowledgeX
-```
-
-```bash
-kx init ~/KnowledgeX
-```
-
-Agents that support Agent Skills can load the guide with `kx install-skill <skills-folder>`. Agents that read an instructions file (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`) can use this snippet:
-
-```markdown
-## Long-term knowledge (KnowledgeX)
-Durable knowledge is kept in a KnowledgeX bundle, managed with the `kx` command.
-- Before answering questions that depend on earlier decisions, preferences, lessons, people, or plans, run `kx search <words>`.
-- Before saving anything, and at the end of substantial conversations, run `kx guide` and follow it.
-```
-
-| Command | What it does |
-|---|---|
-| `kx init FOLDER` | Create a bundle and make it your default |
-| `kx guide [what\|write\|retrieve\|maintain\|all]` | Print the agent guide |
-| `kx new TYPE "Title" --description "…" --by ID` | Create a note from a template |
-| `kx touch FILE --by ID` | Record that a note was changed |
-| `kx verify FILE --by ID` | Record that a note was checked |
-| `kx relate FILE supersedes\|contradicts FILE --by ID` | Mark a replacement or a conflict |
-| `kx search [words] [--type TYPE] [--all]` | Find notes, with trust and freshness |
-| `kx check` | Check the bundle for mistakes |
-| `kx review` | List notes that need attention |
-| `kx index` | Rebuild the list of notes |
-| `kx install-skill FOLDER` | Install KnowledgeX as an Agent Skill |
-| `kx mcp` | Run the MCP server |
-
-`--by` says who is acting: `human:<name>`, `<agent>/<model>`, or `process:<name>`. To use a folder other than your default, add `--bundle FOLDER` or set `KX_BUNDLE`.
+The [technical guide](docs/technical.md) covers setup for other AI apps and coding agents, settings, and the full command reference.
 
 ## How it works
 
@@ -118,6 +64,7 @@ The notes are ordinary markdown files, so you can also browse them in Obsidian, 
 ## Learn more
 
 - [Walkthrough](docs/walkthrough.md): step by step, from install to your first notes
+- [Technical guide](docs/technical.md): other AI apps, coding agents, and the `kx` command reference
 - [Design](docs/design.md): goals, architecture, decisions, and roadmap
 - [Judgment evals](evals/README.md): how we measure whether an AI keeps the right things
 
@@ -143,13 +90,13 @@ Changes to the guides should be checked against the [judgment evals](evals/READM
 
 Tests run automatically on every pull request, on macOS, Windows, and Linux.
 
-**Releasing.** Set the new version in `package.json`, `manifest.json`, and `VERSION` in `src/bundle.ts` (the tests check they match), merge to `main`, then tag and push. The release workflow builds `KnowledgeX.mcpb` and publishes it as a GitHub release, which the download links in this README point to.
+**Releasing.** Set the new version in `package.json`, `manifest.json`, and `VERSION` in `src/bundle.ts` (the tests check they match), merge to `main`, then tag and push. The release workflow publishes the package to npm (with provenance, through trusted publishing, so no npm token is stored) and publishes `KnowledgeX.mcpb` as a GitHub release, which the download links in this README point to. Re-running a failed release skips the steps that already succeeded.
 
 ```bash
 git tag v0.2.0 && git push origin v0.2.0
 ```
 
-A tag with a suffix, such as `v0.3.0-rc.1` (with the same version in the three files), is published as a pre-release, so the download links keep pointing at the last stable version.
+A tag with a suffix, such as `v0.3.0-rc.1` (with the same version in the three files), is published as a pre-release on GitHub and under npm's `next` tag, so the download links and `npm install knowledgex` keep pointing at the last stable version.
 
 ## License
 
