@@ -141,6 +141,14 @@ npm run pack:mcpb
 
 Changes to the guides should be checked against the [judgment evals](evals/README.md). New eval cases are especially welcome.
 
+Tests run automatically on every pull request, on macOS, Windows, and Linux.
+
+**Releasing.** Set the new version in `package.json`, `manifest.json`, and `VERSION` in `src/bundle.ts` (the tests check they match), merge to `main`, then tag and push. The release workflow builds `KnowledgeX.mcpb` and publishes it as a GitHub release, which the download links in this README point to.
+
+```bash
+git tag v0.2.0 && git push origin v0.2.0
+```
+
 ## License
 
 [MIT](LICENSE)
