@@ -8,7 +8,7 @@ Notes follow the [Open Knowledge Format (OKF) v0.2](https://github.com/GoogleClo
 - **`index.md`** lists every note by type. It is generated; `kx` rebuilds it after each change.
 - **`log.md`** is a dated changelog, newest first. `kx` commands add to it.
 - **Every other `.md` file is a note.**
-- **File names are kebab-case**, like `use-postgresql-as-the-job-queue.md`. The display name lives in `title`. `kx new` chooses the file name.
+- **File names are kebab-case**, like `use-postgresql-as-the-job-queue.md`. The display name lives in `title`. Creating a note chooses the file name.
 - **Link with standard relative markdown links**, like `[Job queue decision](use-postgresql-as-the-job-queue.md)`. Don't use `[[wikilinks]]`; OKF doesn't define them and other tools can't follow them.
 
 ## Note types
@@ -28,7 +28,7 @@ Notes follow the [Open Knowledge Format (OKF) v0.2](https://github.com/GoogleClo
 | `Source` | A book, article, or talk, with takeaways | Never | Update |
 | `Timeline` | Dated entries about one subject | Never | Add entries only |
 
-`kx new` sets `stale_after` from this table. Change it when a note's facts change faster or slower than usual.
+Creating a note sets `stale_after` from this table. Change it when a note's facts change faster or slower than usual.
 
 ## Frontmatter
 
@@ -69,8 +69,8 @@ aliases: [Acme, payment provider]
 | `resource` | OKF | Optional. The canonical URL when the note describes one specific thing. |
 | `created` | KnowledgeX | The date the note was created. |
 | `aliases` | KnowledgeX | Other names people use for the same thing. Add the old title when renaming. |
-| `supersedes` | KnowledgeX | File names of notes this one replaces. Set with `kx relate`. |
-| `contradicts` | KnowledgeX | File names of notes this one conflicts with. Set with `kx relate`. |
+| `supersedes` | KnowledgeX | File names of notes this one replaces. Set by linking notes. |
+| `contradicts` | KnowledgeX | File names of notes this one conflicts with. Set by linking notes. |
 
 Don't add other keys. All dates and times are ISO 8601 in UTC.
 
@@ -80,21 +80,21 @@ Don't add other keys. All dates and times are ISO 8601 in UTC.
 - **Two relationships get frontmatter keys**, because search and maintenance act on them:
     - `supersedes`: the other note is replaced. Search skips it and points to the newer note.
     - `contradicts`: there is a known conflict. Both sides must be shown until someone resolves it.
-- **Every frontmatter relationship also needs a link in the body**, so plain OKF readers see it. `kx relate` adds both.
+- **Every frontmatter relationship also needs a link in the body**, so plain OKF readers see it. Linking notes adds both.
 - **Write each relationship once**, on the newer or more specific note. "Superseded by" is worked out automatically.
 
 ## Trust: who wrote it and who checked it
 
-- **Identities.** Agents are `<agent>/<model>`. People are `human:<id>`. Scheduled jobs are `process:<name>`.
-- **`generated`** records who last meaningfully changed the content. Use `kx new` for new notes and `kx touch` after edits.
+- **Identities.** Agents are `<agent>/<model>`. People are `human:<id>`. Scheduled jobs are `process:<name>`. The tools fill these in automatically.
+- **`generated`** records who last meaningfully changed the content. Creating or changing a note updates it.
 - **`verified`** records real checks only:
-    - you compared the claims against their sources → `kx verify FILE --by <you>` → **machine-confirmed**
-    - a person confirmed the content in this conversation → `kx verify FILE --by human:<their-id>` → **human-reviewed**
+    - you compared the claims against their sources → record a check by you → **machine-confirmed**
+    - the user confirmed the content in this conversation → record a check by the user → **human-reviewed**
     - no real check happened → leave it **unverified**
-- **A check only counts if it happened after the last content change.** Editing a note after it was verified makes it unverified again, while the history of past checks stays in the file.
+- **A check only counts if it happened after the last content change.** Changing a note after it was checked makes it unverified again, while the history of past checks stays in the file.
 - **Footnote facts from outside** with the source's `id`: `Refunds settle in 5 business days[^acme-docs].`
-- **Uncertain content** gets `status: draft`.
-- After creating or materially changing a note, ask the user once: "Should I mark this as verified by you?"
+- **Uncertain content** is saved as a draft.
+- After creating or materially changing a note, ask the user once, in plain words: "Is this right? If so, I'll mark it as confirmed by you."
 
 ## Writing the body
 
@@ -109,30 +109,31 @@ Don't add other keys. All dates and times are ISO 8601 in UTC.
 
 ## Workflows
 
+The steps name operations; see the operations table in the overview for the matching tool or command.
+
 **Create**
-1. `kx search <words>` to make sure the note doesn't exist yet.
-2. `kx new TYPE "Title" --description "One sentence." --by <you>`. Add `--source id=URL` for each source, and `--status draft` if unsure.
-3. Open the printed file and write the body. Replace the template hints.
-4. `kx check`.
+1. **Search** to make sure the note doesn't exist yet.
+2. **Create** the note with its type, title, one-sentence description, and body. Add sources for outside facts. Save it as a draft if unsure.
+3. On the command line, `kx new` writes a template: fill in the body, replace the hints, then run `kx check`.
 
 **Update**
-1. Read the note. Merge the new knowledge into the right section; don't just append to the end.
-2. `kx touch FILE --by <you> --message "what changed"`.
+1. **Read** the note. Merge the new knowledge into the right section; don't just append to the end.
+2. **Change** the note, with a few words on what changed.
 
 **Supersede** (a decision or belief changed)
-1. `kx new` for the replacement, and explain in its body what changed and why.
-2. `kx relate NEW supersedes OLD --by <you>`. The old note becomes `deprecated`, and links are added both ways.
+1. **Create** the replacement, and explain in its body what changed and why.
+2. **Link** it as superseding the old note. The old note is retired, and links are added both ways.
 
 **Record a conflict**
-1. `kx relate NOTE contradicts OTHER --by <you>`.
-2. Ask the user which is right. Once resolved, supersede the wrong note or remove the `contradicts` entry, then `kx touch`.
+1. **Link** the notes as contradicting each other.
+2. Ask the user which is right. Once resolved, supersede the wrong note, or change the note to drop the conflict.
 
 **Add to a timeline**
-Add a dated line at the top of `## Entries`, then `kx touch`.
+**Change** the Timeline note, adding a dated line at the top of `## Entries`.
 
-## Without the `kx` command
+## Without KnowledgeX tools
 
-If you can't run `kx`, you can still follow the format by hand:
+If you have neither the tools nor the `kx` command, you can still follow the format by hand:
 
 - write the frontmatter shown above
 - update `generated` whenever you change content

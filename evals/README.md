@@ -18,22 +18,22 @@ The 20 cases cover decisions, lessons, playbooks, entities, people, preferences,
 
 ## Run it
 
-You need [uv](https://docs.astral.sh/uv/), or Python with PyYAML installed.
+You need [Node.js](https://nodejs.org) 18 or newer, and `npm install` run once in the repository.
 
 **Validate the cases** (no agent needed):
 
 ```bash
-uv run evals/run.py check
+npm run evals -- check
 ```
 
 **Run every case through an agent.** `--agent` is any command that reads the prompt on standard input and prints the reply:
 
 ```bash
-uv run evals/run.py run --agent "claude -p"
+npm run evals -- run --agent "claude -p"
 ```
 
 ```bash
-uv run evals/run.py run --agent "ollama run llama3.1"
+npm run evals -- run --agent "ollama run llama3.1"
 ```
 
 If your agent takes a file instead of standard input, put `{prompt_file}` in the command, and it will be replaced with the prompt's path. Use `--case <id>` to run a single case, and `--jobs` to change how many run at once (default 4).
@@ -47,11 +47,11 @@ Tips:
 **Chat apps with no command line.** Write the prompts, paste each one into the app, save each reply as `<case-id>.response.txt` in the same folder, then score:
 
 ```bash
-uv run evals/run.py prompts evals/results/manual
+npm run evals -- prompts evals/results/manual
 ```
 
 ```bash
-uv run evals/run.py score evals/results/manual
+npm run evals -- score evals/results/manual
 ```
 
 Results go to `evals/results/<time>-<agent>/`: the prompts, the raw replies, and `report.md`.
@@ -90,7 +90,7 @@ Add a row when you run a new agent or change the guide.
 1. Copy a case in [`cases/`](cases/) that's close to what you want to test, and rename it to `<id>.yaml`.
 2. Write a realistic conversation, including the noise real conversations have: side issues, numbers, logistics.
 3. Fill in `expect`, `optional`, and `avoid`. A `match` is a list of groups: every group needs at least one of its words, and matching ignores case. For example, `[["version"], ["path", "url"]]` means "mentions version, and mentions path or url".
-4. Write a `reference` answer, and run `uv run evals/run.py check`. The check fails if the reference doesn't pass, if an avoid rule never appears in the conversation, or if saving the whole transcript would pass.
+4. Write a `reference` answer, and run `npm run evals -- check`. The check fails if the reference doesn't pass, if an avoid rule never appears in the conversation, or if saving the whole transcript would pass.
 
 Rules for cases:
 

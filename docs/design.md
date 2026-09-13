@@ -1,6 +1,6 @@
 # KnowledgeX design
 
-This document explains why KnowledgeX exists, how it is built, the decisions behind it, and where it is going. The rules agents follow live in the [agent guides](../src/knowledgex/protocol/); this document doesn't repeat them.
+This document explains why KnowledgeX exists, how it is built, the decisions behind it, and where it is going. The rules agents follow live in the [agent guides](../guides/); this document doesn't repeat them.
 
 ---
 
@@ -15,19 +15,19 @@ The hard part isn't storage. Knowledge fails less by being missing than by being
 
 | Question | Hard part | Where KnowledgeX answers it |
 |---|---|---|
-| **What to write** | Separating lasting knowledge from conversation leftovers | [what-to-write.md](../src/knowledgex/protocol/what-to-write.md): five gates, how fast information goes stale, what to look for, what never to write |
-| **How to write** | A consistent, portable shape that shows trust and age | [how-to-write.md](../src/knowledgex/protocol/how-to-write.md): OKF v0.2 notes with four extension keys |
-| **How to retrieve** | Finding the current, trustworthy answer cheaply | [how-to-retrieve.md](../src/knowledgex/protocol/how-to-retrieve.md): cheap search first, supersession, trust shown in answers, trust gating actions |
+| **What to write** | Separating lasting knowledge from conversation leftovers | [what-to-write.md](../guides/what-to-write.md): five gates, how fast information goes stale, what to look for, what never to write |
+| **How to write** | A consistent, portable shape that shows trust and age | [how-to-write.md](../guides/how-to-write.md): OKF v0.2 notes with four extension keys |
+| **How to retrieve** | Finding the current, trustworthy answer cheaply | [how-to-retrieve.md](../guides/how-to-retrieve.md): cheap search first, supersession, trust shown in answers, trust gating actions |
 
-A fourth, **maintenance** ([maintain.md](../src/knowledgex/protocol/maintain.md)), keeps the answers true over time.
+A fourth, **maintenance** ([maintain.md](../guides/maintain.md)), keeps the answers true over time.
 
 ---
 
 ## 2. Principles
 
-1. **Agent-agnostic.** The rules are plain markdown and the tool is a command line. Nothing depends on a particular AI vendor or model.
+1. **Agent-agnostic.** The rules are plain markdown, and the operations are exposed both as MCP tools and as a command line. Nothing depends on a particular AI vendor or model.
 2. **Tool-agnostic.** Knowledge is stored in an open format in plain files. Editors and knowledge tools are views onto it, not its owner.
-3. **Easy to install.** One command-line tool with one dependency. No servers, databases, or accounts.
+3. **No setup for non-technical users.** People such as lawyers and PR managers install one file with a double-click. No terminal, runtime, accounts, servers, or databases.
 4. **Open standard.** Notes are [Open Knowledge Format (OKF) v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md), so they are portable without KnowledgeX.
 5. **A note is a liability, not an asset.** Every note must be searched past and kept true. The bar for writing is high; fewer, better notes.
 6. **Write what remains, not the transcript.** Knowledge is what's still useful after the conversation, its context, and its moment have passed.
@@ -40,11 +40,11 @@ A fourth, **maintenance** ([maintain.md](../src/knowledgex/protocol/maintain.md)
 ## 3. Architecture
 
 ```
-                ┌──────────────────────── any AI agent ────────────────────────┐
-                │  reads the guides (Agent Skill, instructions file, or prompt)  │
-                └───────────────┬───────────────────────────────┬──────────────┘
-                     kx commands│ (or direct file edits)         │ reads notes
-                                ▼                                ▼
+      ┌──────────── AI app (Claude Desktop, Cursor, …) ────────────┐   ┌──── agent with a shell ────┐
+      │  one-click extension or MCP config → MCP tools + guides     │   │  Agent Skill / AGENTS.md    │
+      └──────────────────────────────┬─────────────────────────────┘   └──────────────┬──────────────┘
+                                     │ MCP server (kx mcp)                            │ kx commands
+                                     ▼                                                ▼
    ┌────────────┐      ┌─────────────────────────────────────────────────────┐
    │  guides    │      │ bundle: a flat folder of OKF markdown notes          │
    │ (packaged  │      │   index.md · log.md · <kebab-case-note>.md …         │
@@ -60,20 +60,24 @@ A fourth, **maintenance** ([maintain.md](../src/knowledgex/protocol/maintain.md)
 
 | Component | What it is | Where |
 |---|---|---|
-| **Guides** | The rules: overview, what to write, how to write, how to retrieve, maintain | `src/knowledgex/protocol/`, printed with `kx guide` |
-| **Bundle** | The knowledge itself, as a conformant OKF bundle on disk | Any folder the user picks with `kx init` |
-| **`kx`** | Creates notes from templates, records authorship and verification, handles relationships, search, validation, maintenance lists, and the index | `src/knowledgex/cli.py`, `src/knowledgex/bundle.py` |
-| **Agent integrations** | Ways to hand the guides to an agent | `kx install-skill` (Agent Skills), an instructions-file snippet, `kx guide all` for chat apps |
+| **Guides** | The rules: overview, what to write, how to write, how to retrieve, maintain | `guides/`, served by the `read_guide` tool and `kx guide` |
+| **Bundle** | The knowledge itself, as a conformant OKF bundle on disk | The folder chosen at install (default `Documents/KnowledgeX`) or with `kx init` |
+| **Core library** | Reading, writing, trust, links, search, validation, maintenance, and the index | `src/bundle.ts` |
+| **MCP server** | Eight tools for AI apps: `read_guide`, `search_notes`, `read_note`, `save_note`, `update_note`, `confirm_note`, `link_notes`, `check_up`, plus the key rules as server instructions | `src/mcp.ts`, run with `kx mcp` |
+| **One-click extension** | The MCP server bundled into one file with the guides, installed by double-click in Claude Desktop | `manifest.json`, built with `npm run pack:mcpb` |
+| **`kx` command line** | The same operations for scripts and shell-capable agents, plus templates and `install-skill` | `src/cli.ts` |
+| **Agent integrations** | Ways to hand the guides to an agent | The extension or MCP config, `kx install-skill` (Agent Skills), an instructions-file snippet, `kx guide all` for chat apps |
 | **Tool connections** | Ways people see and edit the bundle | Markdown folder tools today; connectors planned (§6) |
 
 ### How KnowledgeX stays agent-agnostic
 
 - **Guides are plain markdown.** Any agent that can read text can follow them.
+- **AI apps that support MCP** get the tools and the key rules through the MCP server. Tool descriptions carry the essential rules (propose first, cite trust), because descriptions are what apps reliably show the model.
 - **`kx` is a command line.** Any agent that can run shell commands can use it.
 - **Agents with a skills system** get a generated skill folder, with the same text as the guides.
 - **Agents that read instruction files** get a four-line snippet that points them at `kx guide`.
-- **Chat apps without file access** get the whole guide as a prompt. They can decide and format well, but can't read or write the bundle. A planned MCP server closes that gap (§6).
-- **Identity follows OKF's actor convention** (`<agent>/<model>`, `human:<id>`, `process:<name>`), so no agent is special.
+- **Chat apps that support neither MCP nor shell commands** get the whole guide as a prompt. They can decide and format well, but can't read or write the bundle.
+- **Identity follows OKF's actor convention** (`<agent>/<model>`, `human:<id>`, `process:<name>`), so no agent is special. The MCP server takes the agent's identity from the connected app, so a model can't misreport it.
 
 ### How KnowledgeX stays tool-agnostic
 
@@ -126,11 +130,17 @@ OKF records `generated` (last content change) and `verified` (checks) separately
 
 ### 4.5 Built-in checks rather than an external linter
 
-[okflint](https://github.com/mattdav/okflint) validates bundles against declarative profiles and inspired these checks. We don't depend on it, for two reasons: it needs Python 3.12 or newer and a separate install, which conflicts with "easy to install", and the KnowledgeX checks (trust, staleness, mirrored relationships, transcript-style writing) are small. Bundles stay conformant OKF, so any OKF linter can still be run alongside.
+[okflint](https://github.com/mattdav/okflint) validates bundles against declarative profiles and inspired these checks. We don't depend on it: it needs a separate Python install, and the KnowledgeX checks (trust, staleness, mirrored relationships, transcript-style writing) are small. Bundles stay conformant OKF, so any OKF linter can still be run alongside.
 
-### 4.6 One dependency
+### 4.6 TypeScript on Node, not Python
 
-`kx` uses only the Python standard library plus PyYAML. PyYAML is set to keep ISO 8601 timestamps as plain strings, so they are written back exactly as OKF expects.
+v0.1 was written in Python. v0.2 is TypeScript, because the people KnowledgeX is for shouldn't install anything:
+
+- **Claude Desktop ships its own Node.js** for extensions, so a Node extension installs with a double-click. A Python extension would require the user to install Python first, which Windows doesn't include and macOS may not.
+- **Compiled Python binaries** would avoid that, but need a build per operating system and paid code signing to avoid security warnings.
+- **One codebase** serves the extension, the MCP server (`npx`), and the command line, so the trust and staleness rules can't drift between implementations.
+
+Runtime dependencies are the MCP SDK, `zod` (tool input schemas), and `yaml`. The YAML 1.2 core schema keeps ISO 8601 timestamps as plain strings, so they are written back exactly as OKF expects. The extension bundles everything into a single JavaScript file, so it doesn't depend on any package manager's layout. The eval runner is TypeScript too, so contributors need only Node.
 
 ### 4.7 Propose first
 
@@ -139,6 +149,21 @@ Agents propose what to keep and write only what the user approves, unless the us
 ### 4.8 No databases
 
 Up to roughly ten thousand notes, descriptions plus search plus supersession give precise retrieval with no infrastructure. A search index or embeddings would be added only when recall measurably fails.
+
+### 4.9 Tools write whole notes, and enforce the rules that matter most
+
+Chat apps usually can't edit files, so the MCP tools take full note content rather than asking the agent to edit files and record changes afterwards. The rules whose violation would quietly damage trust are enforced in code, not left to the model:
+
+- decisions can't be edited, only superseded;
+- every change resets the note's trust;
+- authorship comes from the connected app;
+- notes can't be read or written outside the notes folder.
+
+The one rule code can't check, whether the user really confirmed a note, is stated in the `confirm_note` tool description and the guides.
+
+### 4.10 Zero-configuration defaults
+
+The extension works without touching its settings. The notes folder defaults to `Documents/KnowledgeX` and is created on first use. The user's name is optional; without it, confirmations are recorded as `human:user`.
 
 ---
 
@@ -172,9 +197,9 @@ We found nothing that decides *what is worth remembering* from conversations, an
 
 | Milestone | Scope | Status |
 |---|---|---|
-| **M1: core** | Agent guides, `kx` command line (init, guide, new, touch, verify, relate, search, check, review, index, install-skill), tests, README, walkthrough | ✅ v0.1 |
+| **M1: core** | Agent guides, `kx` command line (init, guide, new, touch, verify, relate, search, check, review, index, install-skill), tests, README, walkthrough | ✅ v0.1 (Python), ported to TypeScript in v0.2 |
 | **M2: judgment evals** | 20 fictional conversations with answer keys, and an agent-agnostic runner that scores precision, recall, staying quiet, transient leaks, action and type, and detail completeness ([evals/](../evals/)). Next: use the results to tune the guides. | ✅ Built |
-| **M3: MCP server** | The same operations over the Model Context Protocol, for agents that can't run shell commands | Planned |
+| **M3: MCP server and one-click extension** | Eight MCP tools with the key rules built in; a Claude Desktop extension with a folder picker and zero-configuration defaults; plain-language walkthrough for non-technical users | ✅ v0.2 |
 | **M4: tool connectors** | Notion and Confluence (one-way publish first), Evernote and OneNote import and export | Planned |
 
 ### Phase 2: adopt into existing knowledge
@@ -206,6 +231,7 @@ Help people bring notes they already have into a bundle:
 | **Hand edits skip metadata** | The trust rule (§4.4); `kx review` lists notes edited since their last check |
 | **OKF is pre-1.0 and may change** | Declare `okf_version`; keep extensions to four keys; follow the spec closely |
 | **Sync conflicts with API-based tools** | Start with one-way publishing |
+| **Non-technical users can't judge what the AI saved** | Propose-first in plain language; confirmations shown in every answer; decisions immutable in code |
 | **Memory poisoning via note content** | Notes are information, never instructions; only human-reviewed guidance drives actions |
 
 ---

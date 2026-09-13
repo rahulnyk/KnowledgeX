@@ -98,12 +98,12 @@ A candidate must pass all five. If it fails one, write nothing, or keep only the
 
 For each piece that passes the gates:
 
-1. **Search first**: `kx search <words>`.
-2. **A matching note exists and still agrees** → **update it.** Merge the new knowledge into the right section (never tack it on at the end in chat order), then `kx touch`.
-3. **A matching note exists, but the new knowledge replaces a decision or belief** → **supersede it.** Create a new note, then `kx relate NEW supersedes OLD`.
-4. **A matching note conflicts, and it's unclear which is right** → **flag it.** `kx relate NOTE contradicts OTHER`, and ask the user.
+1. **Search first.**
+2. **A matching note exists and still agrees** → **update it.** Merge the new knowledge into the right section (never tack it on at the end in chat order).
+3. **A matching note exists, but the new knowledge replaces a decision or belief** → **supersede it.** Create a new note, then link it as superseding the old one.
+4. **A matching note conflicts, and it's unclear which is right** → **flag it.** Link the notes as contradicting each other, and ask the user.
 5. **It is an event whose history matters** → add a dated entry to the relevant `Timeline` note.
-6. **Nothing exists, and it is a distinct, nameable, reusable thing** → `kx new`.
+6. **Nothing exists, and it is a distinct, nameable, reusable thing** → create a new note.
 7. **Otherwise** → fold it into the closest existing note, or skip it.
 
 ## When to consider writing

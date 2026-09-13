@@ -1,288 +1,125 @@
 # Walkthrough
 
-This guide takes you from nothing to a working KnowledgeX setup in about 15 minutes. No programming experience is needed; you'll copy a few commands into a terminal.
+This guide takes you from nothing to a working KnowledgeX setup in about five minutes. No technical knowledge is needed.
 
-**What you'll end up with:** a folder of notes that your AI agent keeps. It holds only what's worth remembering, and every note shows how much it can be trusted.
+**What you'll end up with:** Claude remembering what matters from your conversations, such as decisions, preferences, lessons, and people, in a folder of notes on your computer that you control.
 
 ---
 
 ## 1. The idea in one minute
 
-Imagine a careful assistant who takes notes for you. They don't write down everything you say. At the end of a meeting, they say:
+Imagine a careful assistant who sits in on your meetings. They don't write down everything. At the end, they say:
 
-> "I'd keep two things: we chose PostgreSQL for the job queue, and we'd revisit that if volume grows a lot. I'm skipping the benchmark numbers; they were from a laptop. OK?"
+> "I'd keep two things: you decided to review liability clauses before payment terms, and why; and the client prefers updates by email. I'm skipping the draft wording, since it'll change. OK?"
 
-Months later, when you ask "why did we pick PostgreSQL?", they find the note, tell you the reason, and add: "you confirmed this in March."
+Months later, when you ask "how do we review supplier contracts?", they find the note, tell you, and add: "you confirmed this in March."
 
-KnowledgeX teaches your AI agent to be that assistant.
-
-Three words you'll see:
-
-- **Bundle**: the folder where notes live.
-- **Note**: one markdown file about one thing (a decision, a person, a lesson…).
-- **`kx`**: the small command-line tool that manages the bundle.
+KnowledgeX teaches Claude to be that assistant.
 
 ---
 
 ## 2. Install
 
-### Open a terminal
+You need **Claude Desktop** for Mac or Windows. If you don't have it, download it from [claude.ai/download](https://claude.ai/download) and sign in.
 
-- **macOS:** open *Terminal* (in Applications → Utilities).
-- **Windows:** open *PowerShell* from the Start menu.
-- **Linux:** open your terminal app.
+1. **Download** [KnowledgeX.mcpb](https://github.com/rahulnyk/KnowledgeX/releases/latest/download/KnowledgeX.mcpb).
+2. **Double-click the file.** Claude Desktop opens an install screen. (If double-clicking doesn't work, drag the file into the Claude Desktop window instead.)
+3. **Review the settings on the install screen**, then click **Install**:
+    - **Notes folder:** where your notes are kept. The default is a `KnowledgeX` folder in your Documents. Leave it unless you want them somewhere else.
+    - **Your name:** optional. It's recorded when you confirm a note is correct.
 
-### Install uv
-
-uv is a tool that installs Python programs, and Python itself if you need it.
-
-macOS and Linux:
-
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
-Windows:
-
-```powershell
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-```
-
-Close the terminal and open a new one, so it picks up the new command.
-
-### Install KnowledgeX
-
-Install it straight from GitHub:
-
-```bash
-uv tool install git+https://github.com/rahulnyk/KnowledgeX
-```
-
-If you've downloaded the repository instead (for example with **Code → Download ZIP** on its GitHub page), install from that folder: `uv tool install ./KnowledgeX`.
-
-Check it worked:
-
-```bash
-kx --version
-```
-
-You should see something like `kx 0.1.0`.
-
-> **Stuck?** Ask your AI agent: "Install KnowledgeX from this repository for me." Agents that can run commands can do these steps.
+To check it's working, open Claude Desktop's **Settings → Extensions**. KnowledgeX should be listed and turned on.
 
 ---
 
-## 3. Create your bundle
+## 3. Your first notes
 
-Pick a folder for your knowledge. A new, empty folder is best.
+Start a new chat and talk about something real, like a plan, a choice you're weighing, or a problem you solved.
 
-```bash
-kx init ~/KnowledgeX
-```
+At a natural stopping point, Claude may offer something like:
 
-This creates the folder with two files:
+> I'd keep one thing: your decision to send client updates by email every Friday, since the client finds calls disruptive. I'd skip the draft email itself. Save this?
 
-- `index.md`: a list of your notes, grouped by type (empty for now)
-- `log.md`: a record of every change
+- Say **yes** to save it.
+- Say **"only the first one"** or **"no"** if you disagree. You're always in charge.
+- If Claude doesn't offer, you can ask: *"Is anything from this conversation worth keeping?"*
+- Or say it directly: *"Remember that I always want contracts reviewed by two people."*
 
-> **Using Obsidian?** You can put the bundle inside your vault, for example `kx init ~/MyVault/KnowledgeX`. In Obsidian, go to *Settings → Files & links*, turn off **Use [[Wikilinks]]**, and set **New link format** to **Relative path to file**. Links you add by hand will then work in every tool, not just Obsidian.
+The first time Claude uses KnowledgeX, Claude Desktop may ask for permission to use its tools. Choose to allow it.
 
----
-
-## 4. Connect your AI agent
-
-Your agent needs to know that KnowledgeX exists and how to use it. Pick the option that matches your agent.
-
-### Option A: agents that support Agent Skills
-
-A skill is a folder of instructions the agent loads when it's relevant. For Claude Code:
-
-```bash
-kx install-skill ~/.claude/skills
-```
-
-For other agents, find their "skills folder" in their documentation and use that path instead.
-
-### Option B: agents that read an instructions file
-
-Many coding agents read a file such as `AGENTS.md`, `CLAUDE.md`, or `GEMINI.md`, or a rules file in your editor. Add this to it:
-
-```markdown
-## Long-term knowledge (KnowledgeX)
-Durable knowledge is kept in a KnowledgeX bundle, managed with the `kx` command.
-- Before answering questions that depend on earlier decisions, preferences, lessons, people, or plans, run `kx search <words>`.
-- Before saving anything, and at the end of substantial conversations, run `kx guide` and follow it.
-```
-
-### Option C: chat apps without access to your computer
-
-Print the full guide:
-
-```bash
-kx guide all
-```
-
-Copy the output into the app's custom instructions or project instructions. The agent will then decide well what's worth keeping and write notes in the right format, but you'll need to copy notes into your bundle yourself.
+**Don't expect many notes.** Most conversations have nothing worth keeping, and that's by design. A small set of notes you can trust beats a big pile you can't.
 
 ---
 
-## 5. Your first notes
+## 4. Ask Claude to remember
 
-Have a normal conversation with your agent about something real: a plan, a choice, a problem you solved.
+In a later chat, ask:
 
-At a natural stopping point, the agent should offer something like:
+> How do I usually send client updates?
 
-> Worth keeping: (1) **Decision**: use PostgreSQL as the job queue, revisit if volume passes 1,000 jobs per hour. (2) **Lesson**: benchmark on production-like machines. Skipping: laptop benchmark numbers, the setup troubleshooting. Save these?
+Claude looks through your notes and answers with where the answer came from:
 
-If it doesn't offer, ask: *"Is anything from this conversation worth keeping?"*
-
-Say yes (or "only the first one"). The agent creates the notes. Open your bundle folder and look. A note looks like this:
-
-```markdown
----
-type: Decision
-title: Use PostgreSQL as the job queue
-description: Jobs live in PostgreSQL until volume needs a dedicated queue.
-status: stable
-created: 2026-03-02
-generated:
-  by: my-agent/1.0
-  at: 2026-03-02T10:15:00Z
----
-
-_Chosen in March 2026 when job volume was under 1,000 per hour._
-
-## Decision
-- Keep background jobs in the existing PostgreSQL database.
-
-## Why
-- Volume is low, and it avoids running a new service.
-
-## Alternatives considered
-- A dedicated queue product: more to operate than this volume needs.
-
-## Reversal conditions
-- Sustained volume above 1,000 jobs per hour, or job delays users notice.
-```
-
-The block between the `---` lines is the note's **metadata**. It records what kind of note this is, who wrote it, and when.
-
-**Don't expect many notes.** Most conversations produce nothing worth keeping, and that's by design. A small bundle you can trust beats a big one you can't.
+> By email every Friday, because the client finds calls disruptive. That's from your note "Client update routine", which hasn't been confirmed yet.
 
 ---
 
-## 6. Ask your agent to remember
+## 5. Confirm the notes you trust
 
-In a later conversation, ask:
+After saving a note, Claude asks whether it's right. When you say yes, the note is marked as **confirmed by you**. You can also say, at any time, *"that note about client updates is correct."*
 
-> What did we decide about the job queue, and why?
+Why it matters:
 
-The agent searches the bundle and answers with the source:
-
-> You're keeping jobs in PostgreSQL because volume is low and it avoids a new service (*Use PostgreSQL as the job queue*, unverified, no expiry). You planned to revisit if volume passes 1,000 jobs per hour.
-
-That "unverified" is important. It means nobody has confirmed the note yet. Which brings us to…
+- Claude tells you whether a note was confirmed, so you know how far to rely on it.
+- If a note is changed later, it goes back to **unconfirmed** until you check it again.
+- Claude only acts on its own, rather than just answering, when the guidance is confirmed by you. Otherwise it asks first.
 
 ---
 
-## 7. Confirm the notes you trust
+## 6. When things change
 
-When you've read a note and it's right, tell your agent *"that note is correct"*, or record it yourself:
+**You changed your mind.** Say *"we're moving client updates to a call every other Monday."* Claude saves the new decision and marks the old one as replaced. The old one stays for history, but Claude won't treat it as current.
 
-```bash
-kx verify use-postgresql-as-the-job-queue.md --by human:alex
-```
+**Something is wrong.** Say *"that note is out of date, the client now wants weekly calls."* Claude suggests the fix and makes it once you agree.
 
-Use your own name after `human:`. The note is now **human-reviewed**.
+**Two notes disagree.** Claude points it out and asks you which one is right.
 
-Three trust levels:
+---
 
-| Level | Meaning |
+## 7. Keep your notes healthy
+
+Facts go stale: people change roles, policies change, vendors change terms. Every so often, ask:
+
+> Do any of my notes need attention?
+
+Claude lists notes that may be out of date, notes that conflict, and notes you've never confirmed, and suggests what to do. Nothing changes until you agree.
+
+---
+
+## 8. Where your notes are, and privacy
+
+- **Your notes are in the folder you chose**, by default `Documents/KnowledgeX`. Open it like any folder. Each note is a plain text file you can read.
+- **You can back it up**, sync it with your usual cloud storage, or delete notes you don't want.
+- **KnowledgeX itself never connects to the internet.** When Claude uses a note in a conversation, the note's text becomes part of that conversation, like anything else you type.
+- **Claude is instructed never to save passwords or account numbers**, and to ask before saving confidential client or personal information.
+
+> **Tip:** to browse your notes in a friendlier way, open the folder in a free notes app such as [Obsidian](https://obsidian.md) (choose "Open folder as vault").
+
+---
+
+## 9. Troubleshooting
+
+| Problem | What to do |
 |---|---|
-| **unverified** | Nobody has checked it yet |
-| **machine-confirmed** | An agent checked it against its sources |
-| **human-reviewed** | A person confirmed it |
-
-Two rules keep this honest:
-
-- If a note is **edited after it was checked**, it goes back to unverified until someone checks it again.
-- Agents only **act** on their own (as opposed to just answering) based on human-reviewed decisions, preferences, principles, and playbooks. For anything else, they ask you first.
-
----
-
-## 8. When you change your mind
-
-Decisions aren't edited; they're **replaced**, so you keep the history. Tell your agent *"we're switching to a dedicated queue"*. It will propose a new decision note and link it to the old one. By hand:
-
-```bash
-kx new Decision "Use a dedicated job queue" --description "Jobs move to a dedicated queue service." --by human:alex
-```
-
-```bash
-kx relate use-a-dedicated-job-queue.md supersedes use-postgresql-as-the-job-queue.md --by human:alex
-```
-
-The old note is marked **deprecated**. Searches now show the new decision, and the old one is still there if you ask for history (`kx search queue --all`).
-
----
-
-## 9. Keep it healthy
-
-Facts go stale: prices change, people change roles, tools get replaced. Once a week or so, run:
-
-```bash
-kx review
-```
-
-It lists notes that need attention:
-
-- **Stale**: past their "check again" date
-- **Edited since last verified**: changed after someone checked them
-- **Open contradictions**: two notes that disagree
-- **Drafts** and **never verified** notes
-
-The easiest way to handle the list is to ask your agent: *"Run KnowledgeX maintenance."* It reads the maintenance guide, re-checks sources, and gives you a short checklist of proposed fixes to approve.
-
-To catch formatting mistakes (for example after editing notes by hand):
-
-```bash
-kx check
-```
-
----
-
-## 10. Editing notes yourself
-
-Notes are just text files, so edit them in any editor. After changing a note's content, record the change:
-
-```bash
-kx touch use-postgresql-as-the-job-queue.md --by human:alex --message "clarified the threshold"
-```
-
-Then run `kx check`.
-
-A few rules if you edit by hand:
-
-- Link to other notes with normal markdown links: `[Job queue decision](use-postgresql-as-the-job-queue.md)`.
-- Keep all notes directly in the bundle folder, not in subfolders.
-- Don't hand-edit `index.md`; it's rebuilt automatically.
-
----
-
-## 11. Troubleshooting
-
-| Problem | Fix |
-|---|---|
-| `kx: command not found` | Open a new terminal. If it still fails, run `uv tool update-shell` and open a new terminal again. |
-| `No bundle yet` | Run `kx init <folder>` first. |
-| The agent never proposes notes | Check it's connected (step 4). You can always ask: "Is anything worth keeping?" |
-| The agent saves too much | Tell it to follow the gates in `kx guide what` strictly. Delete notes you don't want. |
-| `kx check` reports errors | Each line names the file and the problem. Fix it, or ask your agent to. |
-| I want a second bundle (e.g. work and personal) | Create it with `kx init <other-folder>`, which makes it the new default. Or keep your default and pass `--bundle <folder>` to use the other one. |
+| Double-clicking the file does nothing | Open Claude Desktop, then drag `KnowledgeX.mcpb` into its window. Or use **Settings → Extensions → Advanced settings → Install Extension**. |
+| Claude doesn't seem to use KnowledgeX | Check **Settings → Extensions**: KnowledgeX should be turned on. Start a new chat after installing. |
+| Claude never offers to save anything | Ask directly: "Is anything worth keeping?" Most conversations genuinely have nothing to keep. |
+| Claude saves things you don't want | Say no when it proposes them. To remove a saved note, ask Claude to retire it, or delete the file from your notes folder. |
+| I want my notes in a different folder | In **Settings → Extensions → KnowledgeX**, change **Notes folder**, then move your existing note files there. |
 
 ---
 
 ## Where next
 
-- Read the agent guides to see exactly what your agent is told: `kx guide all`
-- Read the [design document](design.md) for the reasoning and the roadmap
+- Curious what Claude is told? Read the [agent guides](../guides/).
+- Using another AI app or the command line? See [Other AI apps and technical users](../README.md#other-ai-apps-and-technical-users).
+- Interested in the reasoning behind KnowledgeX? Read the [design document](design.md).

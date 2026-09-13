@@ -12,11 +12,11 @@ Find the **current, trustworthy** answer, spend as little reading as possible, a
 
 ## How to look
 
-1. **Start cheap.** `kx search <words>` returns titles, descriptions, types, trust levels, and freshness, without note bodies. `index.md` lists every note by type. Don't open note bodies speculatively.
-2. **Search precisely first, then broadly.** Try the most specific name or term. Then filter by type (`--type Decision`). Then try broader words.
+1. **Start cheap.** Search returns titles, descriptions, types, trust levels, and freshness, without note bodies. `index.md` lists every note by type. Don't open note bodies speculatively.
+2. **Search precisely first, then broadly.** Try the most specific name or term. Then filter by type, such as only Decisions. Then try broader words.
 3. **Choose by description.** Open only the few notes that actually answer the question.
 4. **Find the current version.**
-    - Search hides `deprecated` notes. Add `--all` only when the user asks for history.
+    - Search hides retired (`deprecated`) notes. Include them only when the user asks for history.
     - If a result says `superseded by`, read the newer note instead.
     - If a result says `contradicts`, read both notes.
 5. **Follow links only as needed.** A link in a note's body usually comes with a sentence explaining the relationship.

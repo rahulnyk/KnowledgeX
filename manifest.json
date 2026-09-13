@@ -1,0 +1,64 @@
+{
+  "manifest_version": "0.3",
+  "name": "knowledgex",
+  "display_name": "KnowledgeX",
+  "version": "0.2.0",
+  "description": "Long-term memory with judgment: Claude keeps what matters from your conversations, and nothing else.",
+  "long_description": "KnowledgeX gives Claude a memory you can trust. At the end of a conversation, Claude suggests what is worth keeping, such as decisions and the reasons behind them, preferences, lessons, and people. It saves only what you approve. Notes are plain text files in a folder on your computer, so nothing is stored anywhere else. Each note shows whether you have confirmed it and when it goes out of date, and Claude says so when it uses one.",
+  "author": {
+    "name": "rahulnyk",
+    "url": "https://github.com/rahulnyk"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rahulnyk/KnowledgeX"
+  },
+  "homepage": "https://github.com/rahulnyk/KnowledgeX",
+  "documentation": "https://github.com/rahulnyk/KnowledgeX#readme",
+  "support": "https://github.com/rahulnyk/KnowledgeX/issues",
+  "license": "MIT",
+  "keywords": ["memory", "notes", "knowledge", "okf"],
+  "server": {
+    "type": "node",
+    "entry_point": "server/mcp.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/server/mcp.js"],
+      "env": {
+        "KX_BUNDLE": "${user_config.notes_folder}",
+        "KX_USER": "${user_config.your_name}"
+      }
+    }
+  },
+  "tools": [
+    { "name": "read_guide", "description": "Read the rules for what to keep and how" },
+    { "name": "search_notes", "description": "Search your notes" },
+    { "name": "read_note", "description": "Read one note in full" },
+    { "name": "save_note", "description": "Save a new note you approved" },
+    { "name": "update_note", "description": "Change a note you approved changing" },
+    { "name": "confirm_note", "description": "Record that a note was checked" },
+    { "name": "link_notes", "description": "Mark a note as replacing or conflicting with another" },
+    { "name": "check_up", "description": "List notes that need attention" }
+  ],
+  "user_config": {
+    "notes_folder": {
+      "type": "directory",
+      "title": "Notes folder",
+      "description": "Where your notes are kept. The folder is created if it doesn't exist. If you pick a folder that already has other files, notes go in a KnowledgeX folder inside it.",
+      "default": "${DOCUMENTS}/KnowledgeX",
+      "required": false
+    },
+    "your_name": {
+      "type": "string",
+      "title": "Your name",
+      "description": "Recorded when you confirm a note is correct. Optional.",
+      "required": false
+    }
+  },
+  "compatibility": {
+    "platforms": ["darwin", "win32"],
+    "runtimes": {
+      "node": ">=18.0.0"
+    }
+  }
+}

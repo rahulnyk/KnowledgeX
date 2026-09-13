@@ -1,0 +1,50 @@
+{
+  "name": "knowledgex",
+  "version": "0.2.0",
+  "description": "Long-term memory with judgment for any AI agent, stored in the Open Knowledge Format (OKF).",
+  "license": "MIT",
+  "author": "rahulnyk",
+  "homepage": "https://github.com/rahulnyk/KnowledgeX",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rahulnyk/KnowledgeX.git"
+  },
+  "bugs": "https://github.com/rahulnyk/KnowledgeX/issues",
+  "keywords": [
+    "ai-agents",
+    "knowledge-management",
+    "memory",
+    "okf",
+    "mcp",
+    "markdown"
+  ],
+  "type": "module",
+  "bin": {
+    "kx": "dist/src/cli.js"
+  },
+  "files": [
+    "dist/src",
+    "guides"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepare": "tsc",
+    "test": "tsc && node --test dist/test/kx.test.js",
+    "pack:mcpb": "rm -rf build/mcpb && esbuild src/mcp.ts --bundle --platform=node --format=esm --target=node18 --outfile=build/mcpb/server/mcp.js --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" && cp -R manifest.json LICENSE guides build/mcpb/ && node node_modules/@anthropic-ai/mcpb/dist/cli/cli.js validate build/mcpb/manifest.json && node node_modules/@anthropic-ai/mcpb/dist/cli/cli.js pack build/mcpb KnowledgeX.mcpb",
+    "evals": "tsc && node dist/evals/run.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.4"
+  },
+  "devDependencies": {
+    "@anthropic-ai/mcpb": "^2.1.2",
+    "@types/node": "^26.5.1",
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2"
+  }
+}

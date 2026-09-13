@@ -1,6 +1,5 @@
-__pycache__/
-*.egg-info/
-build/
+node_modules/
 dist/
-.venv/
+build/
+*.mcpb
 evals/results/
