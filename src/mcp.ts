@@ -233,7 +233,7 @@ export async function startServer(): Promise<void> {
   await server.connect(new StdioServerTransport());
 }
 
-// The extension runs this file directly.
-if (process.argv[1] && import.meta.url.endsWith("/mcp.js") && process.argv[1].endsWith("mcp.js")) {
+// Run when started directly: compiled as dist/src/mcp.js, or bundled into the extension as server/mcp.mjs.
+if (process.argv[1] && /\/mcp\.m?js$/.test(import.meta.url) && /mcp\.m?js$/.test(process.argv[1])) {
   await startServer();
 }

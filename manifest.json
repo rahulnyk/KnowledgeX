@@ -20,10 +20,10 @@
   "keywords": ["memory", "notes", "knowledge", "okf"],
   "server": {
     "type": "node",
-    "entry_point": "server/mcp.js",
+    "entry_point": "server/mcp.mjs",
     "mcp_config": {
       "command": "node",
-      "args": ["${__dirname}/server/mcp.js"],
+      "args": ["${__dirname}/server/mcp.mjs"],
       "env": {
         "KX_BUNDLE": "${user_config.notes_folder}",
         "KX_USER": "${user_config.your_name}"

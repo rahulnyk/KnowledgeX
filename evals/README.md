@@ -18,7 +18,7 @@ The 20 cases cover decisions, lessons, playbooks, entities, people, preferences,
 
 ## Run it
 
-You need [Node.js](https://nodejs.org) 18 or newer, and `npm install` run once in the repository.
+You need [Node.js](https://nodejs.org) 22 or newer, and `npm install` run once in the repository.
 
 **Validate the cases** (no agent needed):
 

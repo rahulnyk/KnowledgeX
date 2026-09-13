@@ -27,13 +27,13 @@
     "guides"
   ],
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   },
   "scripts": {
     "build": "tsc",
     "prepare": "tsc",
     "test": "tsc && node --test dist/test/kx.test.js",
-    "pack:mcpb": "rm -rf build/mcpb && esbuild src/mcp.ts --bundle --platform=node --format=esm --target=node18 --outfile=build/mcpb/server/mcp.js --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" && cp -R manifest.json LICENSE guides build/mcpb/ && node node_modules/@anthropic-ai/mcpb/dist/cli/cli.js validate build/mcpb/manifest.json && node node_modules/@anthropic-ai/mcpb/dist/cli/cli.js pack build/mcpb KnowledgeX.mcpb",
+    "pack:mcpb": "rm -rf build/mcpb && esbuild src/mcp.ts --bundle --platform=node --format=esm --target=node18 --outfile=build/mcpb/server/mcp.mjs --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" && cp -R manifest.json LICENSE guides build/mcpb/ && node node_modules/@anthropic-ai/mcpb/dist/cli/cli.js validate build/mcpb/manifest.json && node node_modules/@anthropic-ai/mcpb/dist/cli/cli.js pack build/mcpb KnowledgeX.mcpb",
     "evals": "tsc && node dist/evals/run.js"
   },
   "dependencies": {

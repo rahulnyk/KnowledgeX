@@ -15,9 +15,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Claude Desktop runs on macOS and Windows; Linux covers the oldest supported Node.
-          - { os: ubuntu-latest, node: 18 }
+          # Claude Desktop runs on macOS and Windows. Building needs Node 22 or newer.
           - { os: ubuntu-latest, node: 22 }
+          - { os: ubuntu-latest, node: 24 }
           - { os: macos-latest, node: 22 }
           - { os: windows-latest, node: 22 }
     runs-on: ${{ matrix.os }}
@@ -45,3 +45,14 @@ jobs:
         with:
           name: KnowledgeX.mcpb
           path: KnowledgeX.mcpb
+      # The extension runs on the Node that ships with Claude Desktop, which may be older than the build Node.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Start the extension on Node 18
+        run: ./.github/smoke-extension.sh
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Start the extension on Node 20
+        run: ./.github/smoke-extension.sh

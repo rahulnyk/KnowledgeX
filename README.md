@@ -49,7 +49,7 @@ Say yes, "only the first", or no. If nothing is worth keeping, Claude won't ask.
 
 ## Other AI apps and technical users
 
-KnowledgeX isn't tied to Claude. The notes use the open [Open Knowledge Format (OKF)](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md), and any AI app that supports MCP servers can connect. These options need [Node.js](https://nodejs.org) 18 or newer.
+KnowledgeX isn't tied to Claude. The notes use the open [Open Knowledge Format (OKF)](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md), and any AI app that supports MCP servers can connect. These options need [Node.js](https://nodejs.org) 22 or newer.
 
 **Apps with MCP settings** (for example Cursor or VS Code). Add the server to the app's MCP configuration:
 
@@ -123,7 +123,7 @@ The notes are ordinary markdown files, so you can also browse them in Obsidian, 
 
 ## Contributing
 
-Issues and pull requests are welcome. You need Node.js 18 or newer.
+Issues and pull requests are welcome. You need Node.js 22 or newer.
 
 ```bash
 npm install
