@@ -1,0 +1,36 @@
+id: docs-style-correction
+category: preference
+summary: The user corrects the assistant's writing style; the rules should be kept, not the release notes.
+conversation:
+  - user: Can you draft release notes for version 3.4? The main feature is dark mode, plus faster search.
+  - assistant: |-
+      ## Exciting New Features in 3.4!
+      Click the new Appearance toggle to switch to Dark Mode! Search is now faster than ever!
+  - user: >-
+      No. Our docs use sentence case for headings, never use exclamation marks, and we say "select", not
+      "click". That goes for all user-facing docs, not just release notes.
+  - assistant: |-
+      ## What's new in 3.4
+      Select the Appearance toggle to switch to dark mode. Search results now load faster.
+  - user: Much better. Ship it.
+expect:
+  - id: docs-style-preference
+    types: [Preference, Principle, Playbook]
+    match: [["doc", "writing", "style"], ["sentence case", "exclamation"]]
+    capture:
+      sentence-case: [["sentence case"]]
+      no-exclamation-marks: [["exclamation"]]
+      select-not-click: [["select"]]
+      scope: [["user-facing", "all doc", "all user"]]
+avoid:
+  - id: release-content
+    match: [["dark mode", "3.4", "appearance toggle"]]
+reference:
+  - action: new
+    type: Preference
+    title: Writing style for user-facing docs
+    description: House style rules that apply to all user-facing documentation.
+    target: null
+    content: >-
+      Preference: headings use sentence case; no exclamation marks; write "select", not "click". Scope: all
+      user-facing docs, including release notes.

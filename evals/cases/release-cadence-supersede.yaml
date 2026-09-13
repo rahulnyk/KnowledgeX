@@ -1,0 +1,49 @@
+id: release-cadence-supersede
+category: supersede
+summary: A team replaces an existing decision; the right move is a new decision that supersedes the old note.
+bundle:
+  - file: ship-releases-weekly-on-tuesdays.md
+    type: Decision
+    title: Ship releases weekly on Tuesdays
+    description: Changes are batched into one production release every Tuesday to limit deploy risk.
+conversation:
+  - user: Now that feature flags are everywhere and CI is reliable, I want to revisit our weekly Tuesday releases.
+  - assistant: What's the pain with weekly batches?
+  - user: >-
+      Each release bundles dozens of changes, so when something breaks we spend hours working out which
+      change did it. With flags, unfinished work can ship dark, so there's no reason to wait for Tuesday.
+  - assistant: >-
+      Deploying on every merge would keep each change small. Pipeline speed matters then; how long does
+      CI take?
+  - user: We cut it from 14 minutes to 9 minutes last month. The only flaky test left is test_checkout_timeout, and someone is fixing it.
+  - assistant: That's fast enough for continuous deployment. What would make you go back?
+  - user: >-
+      If our change failure rate goes above 15% for a whole month, we return to scheduled releases. OK,
+      decided: from next week, every merge to main deploys to production.
+expect:
+  - id: continuous-deployment-decision
+    types: [Decision]
+    action: supersede
+    target: ship-releases-weekly-on-tuesdays.md
+    match: [["merge", "continuous"]]
+    capture:
+      reason: [["flag", "small", "batch"]]
+      reversal-conditions: [["failure rate", "15%"]]
+avoid:
+  - id: ci-timings
+    match: [["14 minutes", "9 minutes"]]
+  - id: flaky-test-name
+    match: [["test_checkout_timeout"]]
+  - id: edited-the-old-decision
+    action: update
+    match: [["release", "deploy"]]
+reference:
+  - action: supersede
+    type: Decision
+    title: Deploy every merge to production
+    description: Every merge to main deploys to production behind feature flags, replacing weekly Tuesday releases.
+    target: ship-releases-weekly-on-tuesdays.md
+    content: >-
+      Decision: deploy on every merge to main. Why: weekly batches bundled many changes and made failures
+      slow to trace; feature flags let unfinished work ship dark. Alternative rejected: keep weekly
+      releases. Reversal conditions: change failure rate above 15% for a whole month.

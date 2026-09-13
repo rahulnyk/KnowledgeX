@@ -1,0 +1,56 @@
+id: mixed-planning-meeting
+category: mixed
+summary: Noisy meeting notes hide one decision and one lesson among routine updates.
+conversation:
+  - user: Here are my rough notes from today's planning meeting. Can you sort out what matters?
+  - assistant: Go ahead, paste them.
+  - user: |-
+      - sprint velocity was 34 points, down from 38
+      - standup moves to 9:45 starting Monday
+      - agreed: we stop supporting browsers older than two years. They're under 1% of traffic, and testing them costs about a day per release. If an enterprise customer's contract requires an older browser, we revisit.
+      - the demo crashed because the projector cable was loose
+      - last month's checkout bug came from a feature flag nobody remembered; it had been on for 14 months. From now on, every flag gets an owner and a removal date when it's created.
+      - snack budget approved
+  - assistant: I can see a couple of things in there that will matter for a long time.
+  - user: Yes, propose what we should keep.
+expect:
+  - id: browser-support-decision
+    types: [Decision]
+    match: [["browser"]]
+    capture:
+      reason: [["1%", "traffic"]]
+      reversal-conditions: [["enterprise", "contract"]]
+  - id: feature-flag-lesson
+    types: [Lesson, Principle, Playbook]
+    match: [["flag"]]
+    capture:
+      owner: [["owner"]]
+      removal-date: [["remov", "expir", "date"]]
+avoid:
+  - id: sprint-velocity
+    match: [["34 points", "velocity"]]
+  - id: standup-time
+    match: [["9:45", "standup"]]
+  - id: demo-mishap
+    match: [["projector"]]
+  - id: snacks
+    match: [["snack"]]
+reference:
+  - action: new
+    type: Decision
+    title: Support only browsers released in the last two years
+    description: Browsers older than two years are no longer supported.
+    target: null
+    content: >-
+      Decision: drop support for browsers older than two years. Why: they are under 1% of traffic, and
+      testing them costs about a day per release. Reversal conditions: an enterprise customer's contract
+      requires an older browser.
+  - action: new
+    type: Lesson
+    title: Every feature flag needs an owner and a removal date
+    description: Feature flags without an owner and removal date get forgotten and cause bugs.
+    target: null
+    content: >-
+      When this applies: creating any feature flag. Rule: assign an owner and a removal date when the flag
+      is created. Why: a forgotten flag left on for 14 months caused a checkout bug. Origin: checkout bug,
+      2026.

@@ -1,0 +1,46 @@
+id: analytics-vendor-entity
+category: entity
+summary: Contract facts about a new vendor, mixed with a time-limited discount and sales chatter.
+conversation:
+  - user: >-
+      We signed with Lumenfold Analytics this morning. Can you help me pull together what we need to know
+      about them? I have the order form and their pricing page open.
+  - assistant: Sure. What does the order form say about plan limits and renewal?
+  - user: >-
+      We're on the Standard plan. Event data is kept for 13 months. Single sign-on is only available on the
+      Enterprise plan, so no SSO for now. The contract renews automatically every March 1, and we have to
+      give 60 days' notice to cancel.
+  - assistant: And how does support work?
+  - user: >-
+      Ticket portal only, with a one-business-day response target. The sales rep, Jordan, also offered 18%
+      off an upgrade to Enterprise if we sign before Friday. His number is 555-0142.
+  - assistant: That discount is time-limited, so it's a separate decision. Is anyone considering the upgrade?
+  - user: Not now. Also, their demo this morning kept freezing on their side, which was awkward.
+  - assistant: Noted.
+  - user: OK. Capture whatever we'll need about them later.
+expect:
+  - id: vendor-entity
+    types: [Entity]
+    match: [["lumenfold"]]
+    capture:
+      data-retention: [["13 month"]]
+      sso-plan: [["sso", "single sign-on"], ["enterprise"]]
+      renewal-terms: [["march"], ["60"]]
+      support: [["ticket", "business day", "business-day"]]
+avoid:
+  - id: expiring-discount
+    match: [["18%", "discount", "before friday"]]
+  - id: sales-rep-phone
+    match: [["555-0142"]]
+  - id: demo-glitch
+    match: [["freez", "froze", "demo"]]
+reference:
+  - action: new
+    type: Entity
+    title: Lumenfold Analytics
+    description: Our product analytics vendor, with plan limits, renewal terms, and support details.
+    target: null
+    content: >-
+      Key facts (from the order form and pricing page): Standard plan; event data kept for 13 months; SSO
+      only on the Enterprise plan; contract auto-renews every March 1 and needs 60 days' notice to cancel;
+      support through the ticket portal with a one-business-day response target.

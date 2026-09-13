@@ -1,0 +1,42 @@
+id: review-policy-contradiction
+category: contradict
+summary: New information conflicts with a note and nobody knows which is right; it should be flagged, not resolved.
+bundle:
+  - file: review-pull-requests-within-one-business-day.md
+    type: Principle
+    title: Review pull requests within one business day
+    description: "Team agreement: every pull request gets a first review within one business day."
+conversation:
+  - user: >-
+      Something odd. The new engineering handbook page on code review says pull requests should be reviewed
+      within two business days. Our team agreement says one business day.
+  - assistant: Do you know which takes precedence, or whether the handbook is meant to replace team agreements?
+  - user: >-
+      No idea. The handbook was written by another group's manager. I couldn't even find the page through the
+      wiki search at first; someone had to send me the link.
+  - assistant: Then it's unresolved. It would help to confirm with whoever owns the handbook before changing anything.
+  - user: Agreed. I'll ask our engineering manager. Until then I don't want to lose track of the conflict.
+expect:
+  - id: review-time-conflict
+    action: contradict
+    target: review-pull-requests-within-one-business-day.md
+    match: [["review"], ["two", "2 business", "48"]]
+avoid:
+  - id: wiki-search-trouble
+    match: [["wiki search"]]
+  - id: resolved-too-early
+    action: supersede
+    match: [["review"]]
+  - id: silently-changed-the-rule
+    action: update
+    match: [["two business", "2 business", "48 hours"]]
+reference:
+  - action: contradict
+    type: Principle
+    title: Code review time in the engineering handbook
+    description: The engineering handbook asks for pull request reviews within two business days, conflicting with the team's one-day agreement.
+    target: review-pull-requests-within-one-business-day.md
+    content: >-
+      The engineering handbook's code review page says pull requests should be reviewed within two business
+      days; the team agreement says one business day. It is unresolved which applies. TODO: confirm with the
+      engineering manager.

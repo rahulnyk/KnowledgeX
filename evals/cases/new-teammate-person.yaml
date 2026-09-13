@@ -1,0 +1,36 @@
+id: new-teammate-person
+category: person
+summary: A new colleague's role and working style, mixed with short-lived logistics.
+conversation:
+  - user: >-
+      Priya Raman joined the platform team this week as a data engineer. She's taking over ownership of the
+      ingestion pipeline from the contractors.
+  - assistant: Good to know. Did she mention how she likes to work?
+  - user: >-
+      She prefers written, asynchronous updates to calls, and she works from UTC+5:30, so she's usually
+      offline by our afternoon.
+  - assistant: Then written handoffs before her day starts will work best.
+  - user: She's also out this Friday because she's moving flats, and IT still hasn't fixed her VPN access.
+  - assistant: I can draft a message to IT about the VPN if you like.
+  - user: No need, they're on it. I just want future me to remember who she is and what she owns.
+expect:
+  - id: priya-person
+    types: [Person]
+    match: [["priya"]]
+    capture:
+      ownership: [["ingestion"]]
+      working-style: [["written", "async"]]
+avoid:
+  - id: out-on-friday
+    match: [["friday", "moving flats"]]
+  - id: vpn-issue
+    match: [["vpn"]]
+reference:
+  - action: new
+    type: Person
+    title: Priya Raman
+    description: Data engineer on the platform team who owns the ingestion pipeline.
+    target: null
+    content: >-
+      Who: data engineer on the platform team, joined in 2026. Owns the ingestion pipeline, taken over from
+      contractors. Working with her: prefers written, asynchronous updates to calls; works from UTC+5:30.

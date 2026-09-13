@@ -1,0 +1,14 @@
+id: venting-nothing
+category: nothing
+summary: The user vents about a long day; nothing is worth keeping.
+conversation:
+  - user: I just need to vent. Eleven meetings, back to back, and I didn't get a single thing done.
+  - assistant: That sounds exhausting. Days like that make it hard to feel any progress.
+  - user: And the last one could have been an email. I'm so tired.
+  - assistant: It makes sense to be drained. I hope you get a proper break this evening.
+  - user: Thanks, I feel a bit better just saying it.
+expect: []
+avoid:
+  - id: bad-day-details
+    match: [["eleven meetings", "back to back", "back-to-back"]]
+reference: []

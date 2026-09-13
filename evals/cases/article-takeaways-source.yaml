@@ -1,0 +1,44 @@
+id: article-takeaways-source
+category: source
+summary: The user's takeaways from an article are worth keeping; complaints about the website are not.
+conversation:
+  - user: >-
+      I just read an article called "Working Agreements for Remote Teams" on a management blog. The site had
+      so many pop-ups I nearly gave up.
+  - assistant: What stood out?
+  - user: >-
+      Three things. Agreements have to be written down, not assumed. They should be revisited every quarter,
+      because teams change. And each channel should have an explicit response-time norm, like chat within
+      four hours and email within one business day.
+  - assistant: Which of those matters most for your team?
+  - user: >-
+      The response-time norms. We've never agreed on those and it causes friction. There was also a line I
+      liked: "An agreement nobody remembers isn't an agreement."
+  - assistant: That's a good way to put it.
+  - user: I want to keep my takeaways so I can come back to them when we set up our own agreements.
+expect:
+  - id: article-source
+    types: [Source]
+    match: [["working agreement"]]
+    capture:
+      written-down: [["written", "write"]]
+      quarterly-review: [["quarter"]]
+      response-times: [["response"]]
+optional:
+  - id: adopt-response-norms
+    types: [Idea, Plan]
+    match: [["response"], ["norm", "time"]]
+avoid:
+  - id: website-pop-ups
+    match: [["pop-up", "popup", "pop up"]]
+reference:
+  - action: new
+    type: Source
+    title: Working Agreements for Remote Teams (article)
+    description: Takeaways from an article on explicit working agreements for remote teams.
+    target: null
+    content: >-
+      Takeaways: working agreements must be written down, not assumed; revisit them every quarter as the
+      team changes; set an explicit response-time norm for each channel (for example, chat within four
+      hours, email within one business day). Most useful for our team: response-time norms, which we have
+      never agreed on.

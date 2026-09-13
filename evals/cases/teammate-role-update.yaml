@@ -1,0 +1,56 @@
+id: teammate-role-update
+category: update
+summary: A colleague already in the bundle changes role; their note should be updated, not duplicated.
+bundle:
+  - file: sam-ortiz.md
+    type: Person
+    title: Sam Ortiz
+    description: QA lead; owns the release test plan.
+conversation:
+  - user: >-
+      Big reshuffle. Sam Ortiz is moving from QA lead to engineering manager for the payments team,
+      starting the first of next month.
+  - assistant: That's a big change. Who takes over the release test plan?
+  - user: Lee Park, who's joining from the mobile team as the new QA lead.
+  - assistant: Got it. Anything else changing?
+  - user: >-
+      We had cake for Sam this afternoon. Also, our org chart tool still shows the old structure; it takes a
+      week to sync.
+  - assistant: Ha, that tool is always behind.
+  - user: Make sure our notes reflect who does what now.
+expect:
+  - id: sam-role-update
+    types: [Person]
+    action: update
+    target: sam-ortiz.md
+    match: [["sam"], ["manager"]]
+    capture:
+      team: [["payments"]]
+optional:
+  - id: lee-person
+    types: [Person]
+    match: [["lee"]]
+avoid:
+  - id: farewell-cake
+    match: [["cake"]]
+  - id: org-chart-tool
+    match: [["org chart tool", "org-chart tool"]]
+  - id: duplicate-note-for-sam
+    action: new
+    fields: [title]
+    match: [["sam"]]
+reference:
+  - action: update
+    type: Person
+    title: Sam Ortiz
+    description: Engineering manager for the payments team; formerly QA lead.
+    target: sam-ortiz.md
+    content: >-
+      Role: engineering manager for the payments team, previously QA lead. The release test plan now belongs
+      to Lee Park.
+  - action: new
+    type: Person
+    title: Lee Park
+    description: QA lead who owns the release test plan.
+    target: null
+    content: QA lead, joined from the mobile team; owns the release test plan, taking over from Sam Ortiz.

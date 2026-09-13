@@ -1,0 +1,52 @@
+id: api-versioning-decision
+category: decision
+summary: A team chooses URL path versioning for its API, with a debugging detour on the way.
+conversation:
+  - user: >-
+      We need to settle how we version the public API before the partner beta. The two options are
+      putting the version in the URL path, like /v2/orders, or in an Accept header. Can you help us
+      think it through?
+  - assistant: >-
+      Sure. Path versions are visible in logs and easy to test with a browser or curl. Header versions
+      keep URLs clean, but they're easy to forget in client code and harder to cache, because the CDN
+      cache key has to include the header.
+  - user: >-
+      Our CDN configuration is already fragile, so that matters. Quick aside: when I tried the header
+      approach locally I got "HTTP 415 Unsupported Media Type".
+  - assistant: >-
+      A 415 usually means the server didn't recognise the media type string. Check it exactly, for
+      example application/vnd.shop.v2+json.
+  - user: >-
+      Found it, a typo in the vendor string. Anyway, I'm now fairly convinced path versioning wins.
+      Debugging gets easier and caching stays simple.
+  - assistant: >-
+      Those are the two strongest arguments. It's worth agreeing up front on what would make you
+      revisit this.
+  - user: >-
+      If a major partner makes header versioning a contract requirement, or if we ever have more than
+      three versions live at the same time, we should look at it again.
+  - assistant: That's clear. Anything else to settle?
+  - user: No. We go with path versioning, starting at v2.
+expect:
+  - id: versioning-decision
+    types: [Decision]
+    match: [["version"], ["path", "url"]]
+    capture:
+      reason: [["cach", "cdn", "debug", "log"]]
+      reversal-conditions: [["partner", "contract", "three", "more than"]]
+avoid:
+  - id: http-415-detour
+    match: [["415", "unsupported media type"]]
+  - id: vendor-string-typo
+    match: [["vnd.shop", "vendor string", "typo"]]
+reference:
+  - action: new
+    type: Decision
+    title: Version the public API in the URL path
+    description: The public API carries its version in the URL path, such as /v2/, rather than in an Accept header.
+    target: null
+    content: >-
+      Decision: path versioning, starting at v2. Why: simpler debugging and simpler CDN caching than
+      header versioning. Alternative rejected: Accept-header versioning (cleaner URLs, but harder to
+      cache and easy to forget in clients). Reversal conditions: a major partner requires header
+      versioning by contract, or more than three versions are live at once.

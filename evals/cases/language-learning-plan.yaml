@@ -1,0 +1,41 @@
+id: language-learning-plan
+category: plan
+summary: A learning plan settles; app prices discussed along the way are not worth keeping.
+conversation:
+  - user: >-
+      I'm relocating to Porto in about nine months for work and I want to be conversational in Portuguese
+      before I arrive. I'm a complete beginner. Help me plan it.
+  - assistant: >-
+      A realistic target for nine months is B1, where you can handle everyday conversations. How much time
+      can you give it each week?
+  - user: B1 sounds right. I can do 30 minutes a day, and I'd like a tutor once a week.
+  - assistant: >-
+      Then aim for A2 by month four and B1 by month nine, and check progress each month against the level
+      descriptors. For practice apps, the three popular ones cost $12.99, $9.99 and $6.99 a month.
+  - user: >-
+      I'll just use the free tier of one of them. Let's lock in the plan: 30 minutes daily, a weekly tutor,
+      A2 by month four, B1 by month nine, monthly check-ins.
+  - assistant: Locked in.
+expect:
+  - id: portuguese-plan
+    types: [Plan]
+    match: [["portuguese"]]
+    capture:
+      milestones: [["a2"], ["b1"]]
+      routine: [["30 min", "daily"], ["tutor"]]
+      review-points: [["month"]]
+avoid:
+  - id: app-prices
+    match: [["12.99", "9.99", "6.99"]]
+  - id: free-tier
+    match: [["free tier"]]
+reference:
+  - action: new
+    type: Plan
+    title: Reach B1 Portuguese before relocating
+    description: Nine-month plan to become conversational in Portuguese before moving.
+    target: null
+    content: >-
+      Goal: conversational Portuguese (B1) within nine months, before relocating. Approach: 30 minutes of
+      daily practice plus a weekly tutor session. Milestones: A2 by month four; B1 by month nine. Review
+      points: a monthly check against the level descriptors.

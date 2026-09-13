@@ -1,0 +1,51 @@
+id: tls-certificate-outage-lesson
+category: lesson
+summary: A postmortem conversation about an expired certificate, full of timestamps and side issues.
+conversation:
+  - user: >-
+      I'm writing up yesterday's outage. At 09:12 the checkout API started failing TLS handshakes and we
+      were down for 47 minutes. The root cause was an expired certificate on the internal load balancer.
+      Renewal depended on a calendar reminder owned by an engineer who has since left.
+  - assistant: So the reminder went nowhere. Did anything else contribute?
+  - user: >-
+      The on-call pager also listed someone who was on vacation, so the first page was missed. That's a
+      separate problem and it's already fixed in the rotation.
+  - assistant: Understood. What changed for certificates?
+  - user: >-
+      Renewal is now automated through our certificate manager, and an alert fires 21 days before any
+      production certificate expires.
+  - assistant: That removes the single point of failure. Want help with the incident timeline?
+  - user: "Yes: 09:12 errors start, 09:20 incident declared, 09:59 new certificate deployed."
+  - assistant: |-
+      Incident timeline:
+      - 09:12 TLS handshake failures begin on the checkout API
+      - 09:20 Incident declared
+      - 09:59 Renewed certificate deployed; service recovers
+  - user: Perfect, that goes in the postmortem doc. Is anything from this worth remembering beyond the doc?
+expect:
+  - id: certificate-lesson
+    types: [Lesson, Principle, Playbook]
+    match: [["certificate", "cert"], ["expir", "renew"]]
+    capture:
+      automation: [["automat", "auto-renew"]]
+      alerting: [["alert", "monitor"]]
+optional:
+  - id: reminders-need-more-than-one-owner
+    types: [Principle, Lesson]
+    match: [["reminder", "manual"], ["person", "owner", "individual", "single point"]]
+avoid:
+  - id: incident-timestamps
+    match: [["09:12", "09:20", "09:59", "47 minutes"]]
+  - id: vacation-pager
+    match: [["vacation", "pager"]]
+reference:
+  - action: new
+    type: Lesson
+    title: Automate certificate renewal and alert before expiry
+    description: Certificate renewal must be automated and monitored, never left to a manual reminder.
+    target: null
+    content: >-
+      When this applies: every production TLS certificate. Rule: renew certificates automatically and
+      alert at least 21 days before expiry; never rely on a manual reminder. Why: a load balancer
+      certificate expired because its renewal depended on a calendar reminder owned by an engineer who
+      had left, which took checkout down. Origin: checkout outage, 2026.

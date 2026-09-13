@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "knowledgex"
+version = "0.1.0"
+description = "Durable, trustworthy knowledge for any AI agent, stored in the Open Knowledge Format (OKF)."
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+dependencies = ["PyYAML>=6"]
+keywords = ["ai-agents", "knowledge-management", "memory", "okf", "markdown"]
+
+[project.urls]
+Homepage = "https://github.com/rahulnyk/KnowledgeX"
+Issues = "https://github.com/rahulnyk/KnowledgeX/issues"
+
+[project.scripts]
+kx = "knowledgex.cli:main"
+
+[tool.setuptools.package-data]
+knowledgex = ["protocol/*.md"]

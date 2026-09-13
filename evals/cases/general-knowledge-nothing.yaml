@@ -1,0 +1,18 @@
+id: general-knowledge-nothing
+category: nothing
+summary: An explanation of general knowledge any model already has; nothing is worth keeping.
+conversation:
+  - user: What's the actual difference between TCP and UDP? I keep mixing them up.
+  - assistant: >-
+      TCP sets up a connection and guarantees delivery and ordering, retransmitting lost packets. UDP just
+      sends packets with no guarantees, which makes it lighter and faster.
+  - user: So video calls use UDP because a late packet is useless anyway?
+  - assistant: >-
+      Exactly. For live audio and video, waiting for a retransmission is worse than skipping a frame, so
+      real-time media usually runs over UDP.
+  - user: Got it, thanks.
+expect: []
+avoid:
+  - id: protocol-explanation
+    match: [["tcp", "udp"]]
+reference: []

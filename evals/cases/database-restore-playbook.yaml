@@ -1,0 +1,46 @@
+id: database-restore-playbook
+category: playbook
+summary: Several failed attempts before a database restore works; only the working procedure should be kept.
+conversation:
+  - user: A bad migration wiped the staging database. I need to restore last night's backup. Trying pg_restore now.
+  - assistant: What command did you run, and what happened?
+  - user: >-
+      pg_restore -d staging backup.dump, and it said: input file appears to be a text format dump.
+      Please use psql.
+  - assistant: >-
+      The nightly backup is plain SQL, not a custom-format archive, so pg_restore can't read it. Load it
+      with psql -d staging -f backup.sql instead.
+  - user: "Now it fails with: role app_rw does not exist."
+  - assistant: >-
+      The backup references roles that only exist in the globals dump. Run psql -f roles.sql first to
+      create the roles, then load backup.sql again.
+  - user: >-
+      That loaded, but the app throws "duplicate key value violates unique constraint" on every insert.
+  - assistant: >-
+      The sequences weren't advanced past the restored rows. Run the reset_sequences.sql script, which
+      calls setval on each sequence to match the highest id.
+  - user: >-
+      Staging works again. We'll have to do this again, at least for the quarterly restore drill, so make
+      sure we don't go through this trial and error next time.
+expect:
+  - id: restore-playbook
+    types: [Playbook]
+    match: [["restore"], ["backup"]]
+    capture:
+      roles-first: [["role"]]
+      load-with-psql: [["psql"]]
+      reset-sequences: [["sequence", "setval"]]
+avoid:
+  - id: raw-error-messages
+    match: [["appears to be a text format dump", "app_rw does not exist", "duplicate key value violates"]]
+reference:
+  - action: new
+    type: Playbook
+    title: Restore the staging database from the nightly backup
+    description: Working steps to restore the plain-SQL nightly PostgreSQL backup into staging.
+    target: null
+    content: >-
+      When to use: staging data is lost, or the quarterly restore drill. Steps: 1) create roles with
+      psql -f roles.sql; 2) load the data with psql -d staging -f backup.sql (the backup is plain SQL, so
+      pg_restore does not apply); 3) run reset_sequences.sql so every sequence is set with setval past the
+      restored rows. Pitfalls: skipping the roles or the sequence reset makes the restore fail.

@@ -1,0 +1,16 @@
+id: one-off-formula-nothing
+category: nothing
+summary: A one-off spreadsheet question; nothing is worth keeping.
+conversation:
+  - user: How do I count the rows in column B where the date is between two dates I put in E1 and E2?
+  - assistant: 'Use COUNTIFS: =COUNTIFS(B:B, ">="&E1, B:B, "<="&E2)'
+  - user: It returns 0, but I can see matching dates.
+  - assistant: >-
+      Your dates in column B are probably stored as text. Select the column and use Data, Split text to
+      columns, or wrap them with DATEVALUE.
+  - user: They were text. Converted them and it shows 42 now. Thanks!
+expect: []
+avoid:
+  - id: formula-details
+    match: [["countifs", "datevalue"]]
+reference: []

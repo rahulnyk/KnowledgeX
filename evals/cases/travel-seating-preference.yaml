@@ -1,0 +1,39 @@
+id: travel-seating-preference
+category: preference
+summary: Booking one trip reveals lasting travel preferences; the trip details are not worth keeping.
+conversation:
+  - user: I need flights to Lisbon for a conference on the 14th. Can you compare the options?
+  - assistant: >-
+      Three options: XA 482 departing 07:40, direct, $412; XA 519 departing 23:55 overnight, direct, $365;
+      or a connection through Madrid departing 09:10 with a 55-minute layover, $389.
+  - user: >-
+      Never the overnight one, I don't do red-eyes. And a 55-minute connection is asking for trouble; I'll
+      pay more for a direct flight pretty much every time.
+  - assistant: Then XA 482 is the pick. Any seat preference?
+  - user: Aisle, always.
+  - assistant: Aisle seat 14C is available on XA 482.
+  - user: Book it. And please remember how I like to fly.
+expect:
+  - id: flying-preferences
+    types: [Preference]
+    match: [["aisle", "red-eye", "red eye", "overnight", "direct"]]
+    capture:
+      aisle-seat: [["aisle"]]
+      no-red-eyes: [["red-eye", "red eye", "overnight"]]
+      prefer-direct: [["direct", "nonstop", "connection", "layover"]]
+avoid:
+  - id: flight-options
+    match: [["xa 482", "xa 519", "07:40", "23:55", "$412", "$365", "$389"]]
+  - id: seat-number
+    match: [["14c"]]
+  - id: this-trip
+    match: [["lisbon", "conference"]]
+reference:
+  - action: new
+    type: Preference
+    title: How I like to fly
+    description: Flight booking preferences for every trip.
+    target: null
+    content: >-
+      Always an aisle seat. No red-eye (overnight) flights. Prefer direct flights and pay more for them
+      rather than risk tight connections.

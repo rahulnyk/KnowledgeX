@@ -1,0 +1,14 @@
+id: unsettled-brainstorm-nothing
+category: nothing
+summary: A naming brainstorm that doesn't settle, and the user didn't ask to keep ideas; nothing is worth keeping.
+conversation:
+  - user: I'm starting a small side project, an app for tracking houseplant watering. Help me brainstorm names.
+  - assistant: "Some ideas: Driftwood, Tidepool, Sprout Log, Lanternfish, Rootbound."
+  - user: Tidepool is cute but has nothing to do with plants. Rootbound is funny but sounds negative.
+  - assistant: "More plant-flavoured: Leaflet, Canopy, Greenroom, Wateringcan."
+  - user: Hmm. None of them feel right yet. I'll sleep on it.
+expect: []
+avoid:
+  - id: candidate-names
+    match: [["driftwood", "tidepool", "lanternfish", "rootbound", "leaflet", "canopy", "greenroom"]]
+reference: []

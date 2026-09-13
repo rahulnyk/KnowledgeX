@@ -1,0 +1,48 @@
+id: dependency-pinning-duplicate
+category: update
+summary: The team relearns a lesson already in the bundle, plus one new detail; update the note, don't duplicate it.
+bundle:
+  - file: pin-dependency-versions-in-ci.md
+    type: Lesson
+    title: Pin dependency versions in CI
+    description: Unpinned dependencies broke builds when upstream packages shipped breaking changes.
+conversation:
+  - user: "CI broke overnight. The error was ERESOLVE: could not resolve dependency tree, fastjsonx@4.0.0 conflicts with our parser."
+  - assistant: >-
+      A transitive dependency probably floated to a new major version. Is the lockfile committed and
+      enforced in CI?
+  - user: >-
+      The lockfile exists, but CI was running a plain install, which quietly updates it when it's out of
+      sync. I switched CI to the clean install that fails if the lockfile doesn't match. Builds are green.
+  - assistant: That enforces the pins. The catch is that pins go stale, so security fixes get missed.
+  - user: >-
+      Right, so we also turned on a bot that opens a dependency update pull request every week. Pins stay
+      current and upgrades get tested in one place.
+  - assistant: Strict pins plus scheduled updates is a solid pairing.
+  - user: Didn't we write something about pinning before? Either way, make sure this is captured.
+expect:
+  - id: pinning-lesson-update
+    types: [Lesson, Playbook, Principle]
+    action: update
+    target: pin-dependency-versions-in-ci.md
+    match: [["pin", "lockfile", "lock file"]]
+    capture:
+      enforce-lockfile: [["lockfile", "lock file"], ["fail", "clean install", "enforce"]]
+      scheduled-updates: [["week", "scheduled", "bot", "automat"]]
+avoid:
+  - id: error-output
+    match: [["eresolve", "fastjsonx"]]
+  - id: duplicate-lesson
+    action: new
+    fields: [title]
+    match: [["pin", "lock"]]
+reference:
+  - action: update
+    type: Lesson
+    title: Pin dependency versions in CI
+    description: Pins protect builds only when CI enforces the lockfile, and they need scheduled updates.
+    target: pin-dependency-versions-in-ci.md
+    content: >-
+      Addition: a committed lockfile only protects builds if CI enforces it; use the install mode that fails
+      when the lockfile is out of sync. Pair strict pins with a weekly automated dependency update pull
+      request, so pins stay current and upgrades are tested in one place.

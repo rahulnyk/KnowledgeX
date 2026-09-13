@@ -1,0 +1,41 @@
+id: water-heater-timeline
+category: timeline
+summary: A home repair worth recording for its warranty and maintenance, told with a lot of passing detail.
+conversation:
+  - user: >-
+      The new water heater is finally in. Fairway Plumbing replaced the old one on 10 April 2026. It's a
+      50-gallon tank.
+  - assistant: Good news. Did they mention warranty or maintenance?
+  - user: >-
+      A 10-year warranty on the tank and 1 year on labour. The installer said to flush it once a year to
+      keep sediment down. The whole job cost $1,850.
+  - assistant: That's worth writing down somewhere you'll find it.
+  - user: >-
+      They showed up at 9:50 in their 8-to-10 arrival window, and there was water all over the utility
+      room floor. I went through every towel we own.
+  - assistant: What a morning.
+  - user: I'll want the warranty details and maintenance schedule the next time something goes wrong.
+expect:
+  - id: water-heater-record
+    types: [Timeline, Entity]
+    match: [["water heater"], ["2026-04-10", "10 april 2026", "april 10", "april 2026"]]
+    capture:
+      warranty: [["10-year", "10 year", "ten-year"]]
+optional:
+  - id: flush-schedule
+    types: [Playbook]
+    match: [["flush"]]
+avoid:
+  - id: arrival-window
+    match: [["arrival window", "9:50"]]
+  - id: flooded-floor
+    match: [["towel"]]
+reference:
+  - action: new
+    type: Timeline
+    title: Home water heater
+    description: Replacement, warranty, and maintenance history for the home water heater.
+    target: null
+    content: >-
+      2026-04-10: replaced with a 50-gallon tank by Fairway Plumbing, cost $1,850; 10-year tank warranty
+      and 1-year labour warranty. Maintenance: flush the tank once a year.
