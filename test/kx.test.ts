@@ -1,4 +1,4 @@
-// End-to-end checks for the kx command line, the core library, and the MCP server. Run with: npm test
+// End-to-end checks for the kx command line, the core library, and the MCP server. Run with: pnpm test
 import assert from "node:assert/strict";
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";

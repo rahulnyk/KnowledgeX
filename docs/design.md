@@ -64,7 +64,7 @@ A fourth, **maintenance** ([maintain.md](../guides/maintain.md)), keeps the answ
 | **Bundle** | The knowledge itself, as a conformant OKF bundle on disk | The folder chosen at install (default `Documents/KnowledgeX`) or with `kx init` |
 | **Core library** | Reading, writing, trust, links, search, validation, maintenance, and the index | `src/bundle.ts` |
 | **MCP server** | Eight tools for AI apps: `read_guide`, `search_notes`, `read_note`, `save_note`, `update_note`, `confirm_note`, `link_notes`, `check_up`, plus the key rules as server instructions | `src/mcp.ts`, run with `kx mcp` |
-| **One-click extension** | The MCP server bundled into one file with the guides, installed by double-click in Claude Desktop | `manifest.json`, built with `npm run pack:mcpb` |
+| **One-click extension** | The MCP server bundled into one file with the guides, installed by double-click in Claude Desktop | `manifest.json`, built with `pnpm run pack:mcpb` |
 | **`kx` command line** | The same operations for scripts and shell-capable agents, plus templates and `install-skill` | `src/cli.ts` |
 | **Agent integrations** | Ways to hand the guides to an agent | The extension or MCP config, `kx install-skill` (Agent Skills), an instructions-file snippet, `kx guide all` for chat apps |
 | **Tool connections** | Ways people see and edit the bundle | Markdown folder tools today; connectors planned (§6) |

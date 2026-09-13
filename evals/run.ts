@@ -1,9 +1,9 @@
 // Judgment evals for KnowledgeX: given a finished conversation, does an agent keep the right things?
 //
-//   npm run evals -- check                              validate the cases
-//   npm run evals -- run --agent "claude -p"            run every case through an agent, then score
-//   npm run evals -- prompts evals/results/manual       write prompts to paste into a chat app by hand
-//   npm run evals -- score evals/results/<run>          score saved responses
+//   pnpm evals check                              validate the cases
+//   pnpm evals run --agent "claude -p"            run every case through an agent, then score
+//   pnpm evals prompts evals/results/manual       write prompts to paste into a chat app by hand
+//   pnpm evals score evals/results/<run>          score saved responses
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
@@ -394,7 +394,7 @@ export async function main(argv: string[]): Promise<number> {
       return 0;
     }
     default:
-      console.log("Usage: npm run evals -- <check | run --agent CMD [--case ID] [--jobs N] [--timeout S] | prompts FOLDER | score FOLDER>");
+      console.log("Usage: pnpm evals <check | run --agent CMD [--case ID] [--jobs N] [--timeout S] | prompts FOLDER | score FOLDER>");
       return command ? 1 : 0;
   }
 }
