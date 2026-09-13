@@ -149,6 +149,8 @@ Tests run automatically on every pull request, on macOS, Windows, and Linux.
 git tag v0.2.0 && git push origin v0.2.0
 ```
 
+A tag with a suffix, such as `v0.3.0-rc.1` (with the same version in the three files), is published as a pre-release, so the download links keep pointing at the last stable version.
+
 ## License
 
 [MIT](LICENSE)
