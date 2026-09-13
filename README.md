@@ -4,54 +4,145 @@
 
 AI assistants forget everything when a conversation ends. The usual fixes go too far the other way: they save everything, and before long the "memory" is a pile of outdated fragments nobody trusts.
 
-KnowledgeX works like a careful assistant taking notes. At the end of a conversation, Claude suggests what's worth keeping, such as a decision and the reason for it, a preference, a lesson, or a person you work with. It saves only what you approve. Later, when you ask about it, Claude tells you what it knows and how far to trust it: whether you confirmed it, and whether it might be out of date.
+KnowledgeX works like a careful assistant taking notes. At the end of a conversation, your AI suggests what's worth keeping, such as a decision and the reason for it, a preference, a lesson, or a person you work with. It saves only what you approve. Later, when you ask about it, it tells you what it knows and how far to trust it: whether you confirmed it, and whether it might be out of date.
 
 Your notes are plain text files in a folder on your computer.
 
 > **Status:** early (v0.2). Things may still change.
 
-## Get started in Claude Desktop
+## Get started
 
-You need [Claude Desktop](https://claude.ai/download) for Mac or Windows. There's nothing else to install.
+KnowledgeX works with any AI app that can run a local MCP server (MCP is the standard way to give an AI new tools). Find your app below. After setup, talk to your AI as usual; see [what using it looks like](#what-using-it-looks-like).
+
+- **Claude Desktop** needs nothing else installed.
+- **Every other app** runs KnowledgeX with [Node.js](https://nodejs.org). Install version 22 or newer first; the installer from the website is the easiest way.
+
+Your notes go in a `KnowledgeX` folder in your Documents. To use a different folder, set `KX_BUNDLE` in the app's MCP settings; the [technical guide](docs/technical.md#settings) shows how.
+
+### Desktop AI apps
+
+**Claude Desktop** (Mac and Windows)
 
 1. **Download** [KnowledgeX.mcpb](https://github.com/rahulnyk/KnowledgeX/releases/latest/download/KnowledgeX.mcpb).
-2. **Double-click the downloaded file.** Claude Desktop opens an install screen. Click **Install**. Your notes will be kept in a `KnowledgeX` folder in your Documents; you can pick a different folder on that screen.
-3. **Start a new chat** and talk to Claude as usual.
+2. **Double-click the downloaded file.** Claude Desktop opens an install screen. Click **Install**. You can pick a different notes folder on that screen.
+3. **Start a new chat.** The [walkthrough](docs/walkthrough.md) shows what to expect, step by step.
 
-That's it. The [walkthrough](docs/walkthrough.md) shows what to expect, step by step.
+**ChatGPT desktop app**
+
+1. Open **Settings → MCP servers → Add server**.
+2. Name it `KnowledgeX` and choose **STDIO**.
+3. Enter the command `npx`, with the arguments `-y knowledgex mcp`.
+4. Save, then select **Restart**.
+
+This setup is shared with Codex, so KnowledgeX also works in the Codex CLI and IDE extension.
+
+**Perplexity** (Mac)
+
+1. In **Settings → Connectors**, install the Perplexity helper app when asked. It lets Perplexity run local servers.
+2. Select **Add Connector** and stay on the **Simple** tab.
+3. Name it `KnowledgeX`, enter the command `npx -y knowledgex mcp`, and save.
+
+**Gemini desktop app**
+
+Google has announced custom MCP support for Gemini Spark in the Gemini app for Mac, in beta for Google AI Ultra subscribers in the US. We haven't yet confirmed whether it can run local servers like KnowledgeX. Until then, Gemini users can use KnowledgeX through [Gemini CLI](#coding-tools).
+
+### Coding tools
+
+**Windsurf, Cursor, and Gemini CLI.** Add KnowledgeX to the app's MCP settings file:
+
+| App | Settings file |
+|---|---|
+| Windsurf | `~/.codeium/windsurf/mcp_config.json` (also opens from the **MCPs** icon in the Cascade panel) |
+| Cursor | `~/.cursor/mcp.json` |
+| Gemini CLI | `~/.gemini/settings.json` |
+
+```json
+{
+  "mcpServers": {
+    "knowledgex": {
+      "command": "npx",
+      "args": ["-y", "knowledgex", "mcp"]
+    }
+  }
+}
+```
+
+If the file already exists, add the `mcpServers` section to it, or just the `knowledgex` entry if `mcpServers` is already there.
+
+**Code Puppy.** Add KnowledgeX to `~/.code_puppy/mcp_servers.json`, then run `/mcp start knowledgex` in Code Puppy:
+
+```json
+{
+  "mcp_servers": {
+    "knowledgex": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "knowledgex", "mcp"]
+    }
+  }
+}
+```
+
+**VS Code (GitHub Copilot).** Run **MCP: Open User Configuration** from the Command Palette, and add:
+
+```json
+{
+  "servers": {
+    "knowledgex": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "knowledgex", "mcp"]
+    }
+  }
+}
+```
+
+**Claude Code:**
+
+```bash
+claude mcp add --scope user knowledgex -- npx -y knowledgex mcp
+```
+
+**Codex CLI** (also adds it to the ChatGPT desktop app):
+
+```bash
+codex mcp add knowledgex -- npx -y knowledgex mcp
+```
+
+### Any other app
+
+Any app that can run a local MCP server can use KnowledgeX with the command `npx -y knowledgex mcp`. For apps without MCP, coding agents that run shell commands, and the `kx` command line, see the [technical guide](docs/technical.md).
 
 ## What using it looks like
 
-**Keeping something.** At the end of a useful conversation, Claude offers:
+**Keeping something.** At the end of a useful conversation, your AI offers:
 
 > I'd keep two things: your decision to review liability clauses before payment terms, and why; and that the client prefers updates by email, not calls. I'd skip the draft wording we went back and forth on. Save these?
 
-Say yes, "only the first", or no. If nothing is worth keeping, Claude won't ask. You can also just say *"remember this"*.
+Say yes, "only the first", or no. If nothing is worth keeping, it won't ask. You can also just say *"remember this"*.
 
 **Asking later.**
 
 > **You:** How do we usually review supplier contracts?
 >
-> **Claude:** Liability and indemnity first, then termination, then payment terms. That's from your note "Contract review order", which you confirmed in March.
+> **Your AI:** Liability and indemnity first, then termination, then payment terms. That's from your note "Contract review order", which you confirmed in March.
 
-**Confirming.** When Claude saves a note, it asks whether it's right. Say yes, and the note is marked as confirmed by you. If the note is changed later, it needs confirming again.
+**Confirming.** When your AI saves a note, it asks whether it's right. Say yes, and the note is marked as confirmed by you. If the note is changed later, it needs confirming again.
 
-**Changing your mind.** Tell Claude, and it saves the new decision and marks the old one as replaced. It never silently edits a past decision, so you keep the history.
+**Changing your mind.** Tell your AI, and it saves the new decision and marks the old one as replaced. It never silently edits a past decision, so you keep the history.
 
-**A check-up.** Ask *"Do any of my notes need attention?"* Claude lists notes that may be out of date, conflict with each other, or were never confirmed, and suggests fixes.
+**A check-up.** Ask *"Do any of my notes need attention?"* Your AI lists notes that may be out of date, conflict with each other, or were never confirmed, and suggests fixes.
 
 ## Your notes and your privacy
 
 - **Notes stay on your computer**, as plain text files in the folder you chose. You can open, read, back up, or delete them like any other files.
 - **KnowledgeX itself never connects to the internet.**
-- **When Claude uses a note, the note's text becomes part of your conversation**, so it's handled like anything else you type to Claude.
-- **Claude is instructed never to save passwords or account numbers**, and to ask before saving confidential client or personal information.
+- **When your AI uses a note, the note's text becomes part of your conversation**, so it's handled like anything else you type into that app.
+- **Your AI is instructed never to save passwords or account numbers**, and to ask before saving confidential client or personal information.
 
-## Other AI apps and technical users
+## Technical users
 
-KnowledgeX isn't tied to Claude. Any AI app that supports MCP servers can connect with `npx -y knowledgex mcp`, and the `kx` command line (`npm install -g knowledgex`) works for scripts and for coding agents that run shell commands.
-
-The [technical guide](docs/technical.md) covers setup for other AI apps and coding agents, settings, and the full command reference.
+The `kx` command line (`npm install -g knowledgex`) works for scripts and for coding agents that run shell commands. The [technical guide](docs/technical.md) covers it, along with settings, agent skills, and the full command reference.
 
 ## How it works
 
