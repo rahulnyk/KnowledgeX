@@ -1,125 +1,87 @@
 # KnowledgeX
 
-**Long-term memory with judgment, for any AI agent.**
+**A memory for your AI that keeps what matters, and nothing else.**
 
-AI assistants forget everything when a conversation ends. The usual fixes go too far the other way: they save everything, and before long your "memory" is a pile of outdated chat fragments that nobody trusts.
+AI assistants forget everything when a conversation ends. The usual fixes go too far the other way: they save everything, and before long the "memory" is a pile of outdated fragments nobody trusts.
 
-KnowledgeX teaches your agent three things:
+KnowledgeX works like a careful assistant taking notes. At the end of a conversation, Claude suggests what's worth keeping, such as a decision and the reason for it, a preference, a lesson, or a person you work with. It saves only what you approve. Later, when you ask about it, Claude tells you what it knows and how far to trust it: whether you confirmed it, and whether it might be out of date.
 
-1. **What to write.** Keep only what will still matter later: decisions and why they were made, preferences, lessons, people, plans. Skip the chatter, the dead ends, and the numbers that will be stale next week.
-2. **How to write it.** Each note is a plain markdown file that records who wrote it, who checked it, where its facts came from, and when it goes stale.
-3. **How to use it.** Look things up before answering, prefer the newest version, and say how far each fact can be trusted.
+Your notes are plain text files in a folder on your computer.
 
-Your knowledge stays in an ordinary folder on your computer, in the open [Open Knowledge Format (OKF)](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) published by Google. There's no database and no account. You can read and edit every note yourself.
+> **Status:** early (v0.2). Things may still change.
 
-> **Status:** early (v0.1). The format and commands may still change.
+## Get started in Claude Desktop
 
-## How it works
+You need [Claude Desktop](https://claude.ai/download) for Mac or Windows. There's nothing else to install.
 
+1. **Download** [KnowledgeX.mcpb](https://github.com/rahulnyk/KnowledgeX/releases/latest/download/KnowledgeX.mcpb).
+2. **Double-click the downloaded file.** Claude Desktop opens an install screen. Click **Install**. Your notes will be kept in a `KnowledgeX` folder in your Documents; you can pick a different folder on that screen.
+3. **Start a new chat** and talk to Claude as usual.
+
+That's it. The [walkthrough](docs/walkthrough.md) shows what to expect, step by step.
+
+## What using it looks like
+
+**Keeping something.** At the end of a useful conversation, Claude offers:
+
+> I'd keep two things: your decision to review liability clauses before payment terms, and why; and that the client prefers updates by email, not calls. I'd skip the draft wording we went back and forth on. Save these?
+
+Say yes, "only the first", or no. If nothing is worth keeping, Claude won't ask. You can also just say *"remember this"*.
+
+**Asking later.**
+
+> **You:** How do we usually review supplier contracts?
+>
+> **Claude:** Liability and indemnity first, then termination, then payment terms. That's from your note "Contract review order", which you confirmed in March.
+
+**Confirming.** When Claude saves a note, it asks whether it's right. Say yes, and the note is marked as confirmed by you. If the note is changed later, it needs confirming again.
+
+**Changing your mind.** Tell Claude, and it saves the new decision and marks the old one as replaced. It never silently edits a past decision, so you keep the history.
+
+**A check-up.** Ask *"Do any of my notes need attention?"* Claude lists notes that may be out of date, conflict with each other, or were never confirmed, and suggests fixes.
+
+## Your notes and your privacy
+
+- **Notes stay on your computer**, as plain text files in the folder you chose. You can open, read, back up, or delete them like any other files.
+- **KnowledgeX itself never connects to the internet.**
+- **When Claude uses a note, the note's text becomes part of your conversation**, so it's handled like anything else you type to Claude.
+- **Claude is instructed never to save passwords or account numbers**, and to ask before saving confidential client or personal information.
+
+## Other AI apps and technical users
+
+KnowledgeX isn't tied to Claude. The notes use the open [Open Knowledge Format (OKF)](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md), and any AI app that supports MCP servers can connect. These options need [Node.js](https://nodejs.org) 18 or newer.
+
+**Apps with MCP settings** (for example Cursor or VS Code). Add the server to the app's MCP configuration:
+
+```json
+{
+  "mcpServers": {
+    "knowledgex": {
+      "command": "npx",
+      "args": ["-y", "github:rahulnyk/KnowledgeX", "mcp"],
+      "env": { "KX_BUNDLE": "/path/to/your/notes" }
+    }
+  }
+}
 ```
- you + your AI agent
-        │
-        │  follows the KnowledgeX guide: what to write, how, how to look it up
-        ▼
-   kx command  ──►  your bundle: a folder of markdown notes (OKF)
-                        ├── index.md   (list of notes)
-                        ├── log.md     (what changed, when)
-                        └── use-postgresql-as-the-job-queue.md  …
-```
 
-- **The bundle** is a folder of notes. Open it in any markdown editor.
-- **The guide** is a set of instructions your agent reads. It covers what's worth keeping, how to write it, and how to cite it.
-- **The `kx` command** handles the fiddly parts: creating notes from templates, recording who changed or checked what, finding notes, and flagging problems.
-- **You stay in charge.** The agent proposes what to save; you approve it. Only you can mark a note as reviewed by a person.
-
-## What it works with
-
-**AI agents.** KnowledgeX isn't tied to any one AI.
-
-| Your agent | How to connect |
-|---|---|
-| Agents that support **Agent Skills** (`SKILL.md`) | `kx install-skill <your agent's skills folder>` |
-| Agents that read an instructions file (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, rules files) | Paste the snippet from [Connect your agent](#connect-your-agent) |
-| Chat apps with no access to your computer | Paste the output of `kx guide all` into the app's custom instructions. The agent can then follow the rules, but it can't read or write your bundle directly. |
-
-**Knowledge tools.** Because the bundle is plain markdown, it works today with any tool that opens a folder of markdown files, such as Obsidian, VS Code, Typora, or a GitHub or GitLab repository.
-
-| Tool | Status |
-|---|---|
-| Obsidian, VS Code, Typora, and other markdown editors | ✅ Works today. Put the bundle anywhere, including inside an Obsidian vault. |
-| Git hosts (GitHub, GitLab) | ✅ Works today. The bundle is a normal folder, so you can version it. |
-| Notion, Confluence | 🛠 Planned: connectors that sync the bundle with pages |
-| Evernote, OneNote, Apple Notes | 🛠 Planned: import and export |
-
-## Install
-
-You need Python 3.9 or newer. The easiest route is [uv](https://docs.astral.sh/uv/), which also installs Python for you if needed.
-
-**1. Install uv** (skip if you have it)
-
-macOS and Linux:
+**Claude Code:**
 
 ```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
+claude mcp add knowledgex -- npx -y github:rahulnyk/KnowledgeX mcp
 ```
 
-Windows (PowerShell):
-
-```powershell
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-```
-
-**2. Install KnowledgeX** straight from GitHub:
+**The `kx` command line**, for scripts and for agents that run shell commands:
 
 ```bash
-uv tool install git+https://github.com/rahulnyk/KnowledgeX
+npm install -g github:rahulnyk/KnowledgeX
 ```
-
-Prefer pip or pipx? `pipx install git+https://github.com/rahulnyk/KnowledgeX` or `pip install git+https://github.com/rahulnyk/KnowledgeX` work too.
-
-**3. Check it works**
-
-```bash
-kx --version
-```
-
-Tip: you can also ask your AI agent to do these steps for you.
-
-## Quick start
-
-Create your bundle (any empty folder works):
 
 ```bash
 kx init ~/KnowledgeX
 ```
 
-Connect your agent (see below), then just talk to it. When something worth keeping comes up, the agent will propose it, like this:
-
-> Worth keeping: (1) **Decision**: use PostgreSQL as the job queue, with when to revisit it. Skipping: the benchmark numbers. Save these?
-
-Later, ask things like "what did we decide about the job queue?". The agent looks it up and tells you how trustworthy the answer is.
-
-You can use the commands yourself too:
-
-```bash
-kx search job queue
-```
-
-```bash
-kx review
-```
-
-## Connect your agent
-
-**Agents with Agent Skills support.** Install the skill into your agent's skills folder. For Claude Code, that is:
-
-```bash
-kx install-skill ~/.claude/skills
-```
-
-For other agents, check their documentation for the skills folder location.
-
-**Agents that read an instructions file.** Add this to your `AGENTS.md` (or `CLAUDE.md`, `GEMINI.md`, or your editor's rules file):
+Agents that support Agent Skills can load the guide with `kx install-skill <skills-folder>`. Agents that read an instructions file (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`) can use this snippet:
 
 ```markdown
 ## Long-term knowledge (KnowledgeX)
@@ -127,10 +89,6 @@ Durable knowledge is kept in a KnowledgeX bundle, managed with the `kx` command.
 - Before answering questions that depend on earlier decisions, preferences, lessons, people, or plans, run `kx search <words>`.
 - Before saving anything, and at the end of substantial conversations, run `kx guide` and follow it.
 ```
-
-**Chat apps.** Run `kx guide all` and paste the output into the app's custom or project instructions.
-
-## Commands
 
 | Command | What it does |
 |---|---|
@@ -142,37 +100,46 @@ Durable knowledge is kept in a KnowledgeX bundle, managed with the `kx` command.
 | `kx relate FILE supersedes\|contradicts FILE --by ID` | Mark a replacement or a conflict |
 | `kx search [words] [--type TYPE] [--all]` | Find notes, with trust and freshness |
 | `kx check` | Check the bundle for mistakes |
-| `kx review` | List notes that need attention: stale, unchecked, conflicting |
+| `kx review` | List notes that need attention |
 | `kx index` | Rebuild the list of notes |
 | `kx install-skill FOLDER` | Install KnowledgeX as an Agent Skill |
+| `kx mcp` | Run the MCP server |
 
-`--by` says who is acting: `human:<name>` for a person (e.g. `human:alex`), `<agent>/<model>` for an AI agent, or `process:<name>` for a scheduled job. To use a bundle other than your default, add `--bundle FOLDER` or set `KX_BUNDLE`.
+`--by` says who is acting: `human:<name>`, `<agent>/<model>`, or `process:<name>`. To use a folder other than your default, add `--bundle FOLDER` or set `KX_BUNDLE`.
 
-## Questions
+## How it works
 
-**Where is my data?** In the folder you chose, as plain text files. The `kx` command never connects to the internet. Your AI agent reads the notes it needs, the same way it reads any file you share with it.
+- **The notes folder is an OKF bundle:** one markdown file per note, plus an index and a change log. Every note records who wrote it, who confirmed it, where its facts came from, and when it goes out of date.
+- **The agent guides** tell the AI what's worth keeping, how to write it, how to look things up, and how to keep notes current. Read them in [`guides/`](guides/).
+- **The MCP server and `kx` command** do the bookkeeping, so notes stay consistent whichever AI writes them.
 
-**Why the Open Knowledge Format?** It's an open, vendor-neutral spec for knowledge that both people and AI can read. Your notes aren't locked into KnowledgeX: any OKF-aware tool can use them.
-
-**Can I edit notes by hand?** Yes. Afterwards, run `kx touch FILE --by human:<you>` so the note records the change, and `kx check` to catch mistakes.
-
-**Does it work for teams?** A bundle in a shared git repository works today. Features built for teams, such as review through pull requests and per-team bundles, are on the [roadmap](docs/design.md#roadmap).
+The notes are ordinary markdown files, so you can also browse them in Obsidian, VS Code, or any markdown editor.
 
 ## Learn more
 
-- [Walkthrough](docs/walkthrough.md): step-by-step, from install to your first notes
+- [Walkthrough](docs/walkthrough.md): step by step, from install to your first notes
 - [Design](docs/design.md): goals, architecture, decisions, and roadmap
-- Agent guides: [overview](src/knowledgex/protocol/overview.md), [what to write](src/knowledgex/protocol/what-to-write.md), [how to write](src/knowledgex/protocol/how-to-write.md), [how to retrieve](src/knowledgex/protocol/how-to-retrieve.md), [maintain](src/knowledgex/protocol/maintain.md)
+- [Judgment evals](evals/README.md): how we measure whether an AI keeps the right things
 
 ## Contributing
 
-Issues and pull requests are welcome. Run the tests with:
+Issues and pull requests are welcome. You need Node.js 18 or newer.
 
 ```bash
-python tests/test_kx.py
+npm install
 ```
 
-Changes to the agent guides should be checked against the [judgment evals](evals/README.md), which measure whether an agent keeps the right things. New eval cases are especially welcome.
+```bash
+npm test
+```
+
+To build the Claude Desktop extension (`KnowledgeX.mcpb`):
+
+```bash
+npm run pack:mcpb
+```
+
+Changes to the guides should be checked against the [judgment evals](evals/README.md). New eval cases are especially welcome.
 
 ## License
 
