@@ -123,20 +123,20 @@ The notes are ordinary markdown files, so you can also browse them in Obsidian, 
 
 ## Contributing
 
-Issues and pull requests are welcome. You need Node.js 22 or newer.
+Issues and pull requests are welcome. You need Node.js 22 or newer and [pnpm](https://pnpm.io). Running `corepack enable` once gives you the exact pnpm version the project uses.
 
 ```bash
-npm install
+pnpm install
 ```
 
 ```bash
-npm test
+pnpm test
 ```
 
 To build the Claude Desktop extension (`KnowledgeX.mcpb`):
 
 ```bash
-npm run pack:mcpb
+pnpm run pack:mcpb
 ```
 
 Changes to the guides should be checked against the [judgment evals](evals/README.md). New eval cases are especially welcome.

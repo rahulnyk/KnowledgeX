@@ -13,12 +13,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4 # version comes from packageManager in package.json
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm test
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
       - name: Check the tag matches the version
         run: |
           version=$(node -p "require('./package.json').version")
@@ -26,7 +27,7 @@ jobs:
             echo "Tag $GITHUB_REF_NAME does not match version $version in package.json"
             exit 1
           fi
-      - run: npm run pack:mcpb
+      - run: pnpm run pack:mcpb
       - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
