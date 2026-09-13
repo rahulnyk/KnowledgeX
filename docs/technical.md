@@ -8,7 +8,7 @@ Everything here needs [Node.js](https://nodejs.org) 22 or newer.
 
 ## Connect an AI app over MCP
 
-Any app that supports MCP servers can use KnowledgeX. The server gives the AI eight tools and the key rules, so there's nothing else to set up.
+Any app that supports MCP servers can use KnowledgeX. The server gives the AI eight tools and the key rules, so there's nothing else to set up. The README's [Get started](../README.md#get-started) section has step-by-step setup for Claude Desktop, the ChatGPT desktop app, Perplexity, Windsurf, Cursor, Gemini CLI, Code Puppy, VS Code, Claude Code, and Codex.
 
 **Apps with an MCP configuration file** (for example Cursor or VS Code):
 
@@ -36,6 +36,8 @@ claude mcp add knowledgex -- npx -y knowledgex mcp
 |---|---|---|
 | `KX_BUNDLE` | The notes folder | The folder set with `kx init`, otherwise `~/Documents/KnowledgeX` |
 | `KX_USER` | Your name, recorded when you confirm a note | `user` |
+
+To set them, add an `env` entry to the app's MCP configuration, as in the example above, or pass `--env KX_BUNDLE=/path/to/notes` to `codex mcp add` or `claude mcp add`.
 
 The folder is created on first use. If it already contains other files and isn't a KnowledgeX folder, notes go in a `KnowledgeX` folder inside it.
 
