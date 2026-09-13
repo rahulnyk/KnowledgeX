@@ -31,8 +31,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # A tag with a suffix, such as v0.3.0-rc.1, is a pre-release. GitHub never marks pre-releases as latest,
+          # so the README's download link keeps serving the last stable version.
+          prerelease=()
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then prerelease=(--prerelease); fi
           gh release create "$GITHUB_REF_NAME" KnowledgeX.mcpb \
             --verify-tag \
+            "${prerelease[@]}" \
             --title "KnowledgeX $GITHUB_REF_NAME" \
             --generate-notes \
             --notes "**Install in Claude Desktop:** download KnowledgeX.mcpb below and double-click it. See the [walkthrough](https://github.com/rahulnyk/KnowledgeX/blob/main/docs/walkthrough.md)."
