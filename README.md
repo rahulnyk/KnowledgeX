@@ -8,7 +8,7 @@ KnowledgeX works like a careful assistant taking notes. At the end of a conversa
 
 Your notes are plain text files in a folder on your computer.
 
-> **Status:** early (v0.2). Things may still change.
+> **Status:** early (v0.3). Things may still change.
 
 ## Get started
 
@@ -186,7 +186,7 @@ Tests run automatically on every pull request, on macOS, Windows, and Linux.
 **Releasing.** Set the new version in `package.json`, `manifest.json`, and `VERSION` in `src/bundle.ts` (the tests check they match), merge to `main`, then tag and push. The release workflow publishes the package to npm (with provenance, through trusted publishing, so no npm token is stored) and publishes `KnowledgeX.mcpb` as a GitHub release, which the download links in this README point to. Re-running a failed release skips the steps that already succeeded.
 
 ```bash
-git tag v0.2.0 && git push origin v0.2.0
+git tag v0.3.0 && git push origin v0.3.0
 ```
 
 A tag with a suffix, such as `v0.3.0-rc.1` (with the same version in the three files), is published as a pre-release on GitHub and under npm's `next` tag, so the download links and `npm install knowledgex` keep pointing at the last stable version.
