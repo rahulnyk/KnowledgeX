@@ -1,6 +1,6 @@
 # What to write
 
-Decide what is worth keeping **before** you think about format. A small bundle of lasting notes beats a large pile of conversation leftovers, because every note has to be searched past and kept true for as long as it exists. A note is a promise, not a free asset.
+Decide what is worth keeping **before** you think about format. A small set of lasting notes beats a large pile of conversation leftovers, because every note has to be searched past and kept true for as long as it exists. A note is a promise, not a free asset.
 
 ## The standard
 
@@ -17,12 +17,12 @@ Most of any conversation fails this test. Let that part go on purpose.
 | Kind | Holds | Where it belongs |
 |---|---|---|
 | **Working** | The live conversation, tool output, drafts, attempts | Your context window. Gone when the chat ends. |
-| **Episodic** | What happened, and when | Chat history. In the bundle only as a `Timeline` note, when the history itself matters. |
-| **Semantic** | What is true, decided, preferred, or learned | The bundle |
+| **Episodic** | What happened, and when | Chat history. In a notebook only as a `Timeline` note, when the history itself matters. |
+| **Semantic** | What is true, decided, preferred, or learned | Notebooks |
 
 Your job is **consolidation**: move the few lasting pieces into semantic memory and let the rest go.
 
-Knowledge about *how you, the agent, should work* (tool quirks, formatting habits) belongs in agent instructions, not in the bundle. The bundle holds knowledge about the world, the user, and their organisation.
+Knowledge about *how you, the agent, should work* (tool quirks, formatting habits) belongs in agent instructions, not in notebooks. Notebooks hold knowledge about the world, the user, and their organisation.
 
 ## The five gates
 

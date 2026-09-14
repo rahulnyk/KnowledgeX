@@ -46,8 +46,8 @@ A fourth, **maintenance** ([maintain.md](../guides/maintain.md)), keeps the answ
                                      │ MCP server (kx mcp)                            │ kx commands
                                      ▼                                                ▼
    ┌────────────┐      ┌─────────────────────────────────────────────────────┐
-   │  guides    │      │ bundle: a flat folder of OKF markdown notes          │
-   │ (packaged  │      │   index.md · log.md · <kebab-case-note>.md …         │
+   │  guides    │      │ library of notebooks, each a flat OKF bundle         │
+   │ (packaged  │      │   general/ · acme-case/ · … (index.md · log.md · …)  │
    │  markdown) │      └───────────────▲─────────────────────────────────────┘
    └────────────┘                      │ opened directly, or synced
                         ┌──────────────┴──────────────────────────────┐
@@ -61,9 +61,9 @@ A fourth, **maintenance** ([maintain.md](../guides/maintain.md)), keeps the answ
 | Component | What it is | Where |
 |---|---|---|
 | **Guides** | The rules: overview, what to write, how to write, how to retrieve, maintain | `guides/`, served by the `read_guide` tool and `kx guide` |
-| **Bundle** | The knowledge itself, as a conformant OKF bundle on disk | The folder chosen at install (default `Documents/KnowledgeX`) or with `kx init` |
+| **Library and notebooks** | The knowledge itself: a library folder of notebooks, each a conformant OKF bundle on disk (§4.11) | The folder chosen at install (default `Documents/KnowledgeX`) or with `kx init` |
 | **Core library** | Reading, writing, trust, links, search, validation, maintenance, and the index | `src/bundle.ts` |
-| **MCP server** | Eight tools for AI apps: `read_guide`, `search_notes`, `read_note`, `save_note`, `update_note`, `confirm_note`, `link_notes`, `check_up`, plus the key rules as server instructions | `src/mcp.ts`, run with `kx mcp` |
+| **MCP server** | Nine tools for AI apps: `read_guide`, `search_notes`, `read_note`, `save_note`, `update_note`, `confirm_note`, `link_notes`, `check_up`, `list_notebooks`, plus the key rules as server instructions | `src/mcp.ts`, run with `kx mcp` |
 | **One-click extension** | The MCP server bundled into one file with the guides, installed by double-click in Claude Desktop | `manifest.json`, built with `pnpm run pack:mcpb` |
 | **`kx` command line** | The same operations for scripts and shell-capable agents, plus templates and `install-skill` | `src/cli.ts` |
 | **Agent integrations** | Ways to hand the guides to an agent | The extension or MCP config, `kx install-skill` (Agent Skills), an instructions-file snippet, `kx guide all` for chat apps |
@@ -165,6 +165,78 @@ The one rule code can't check, whether the user really confirmed a note, is stat
 
 The extension works without touching its settings. The notes folder defaults to `Documents/KnowledgeX` and is created on first use. The user's name is optional; without it, confirmations are recorded as `human:user`.
 
+### 4.11 Notebooks: a library of bundles
+
+People keep separate bodies of knowledge (a client matter, a team's playbooks, personal preferences) and want to pass them around. Knowledge should be **additive**: when someone sends a notebook, adding it takes one step, with nothing to merge.
+
+**Naming.** Users see **notebooks**. A notebook *is* an OKF bundle, and the docs say so wherever the word first appears, so people who know OKF aren't left guessing. "Project" was ruled out because it clashes with Projects in Claude Desktop.
+
+**What OKF offers.** OKF v0.2 has no mechanism for composing bundles: no manifest of bundles, no cross-bundle links, no import. It does provide the parts we need:
+
+- bundles are directory trees, and an `index.md` in any directory may list subdirectories;
+- a bundle may be distributed "as a subdirectory within a larger repository";
+- `okf_version` is only allowed in a bundle-root `index.md`, so it marks where a bundle starts.
+
+The spec doesn't say how a consumer should treat a bundle nested inside another. KnowledgeX defines that for itself (below), and it is worth proposing upstream.
+
+**Layout.** The notes folder becomes a **library**. Each subfolder whose `index.md` carries `okf_version` is a notebook: a complete, standalone, flat bundle, as before.
+
+```
+Documents/KnowledgeX/           library (the folder chosen at install)
+  index.md                      generated: one entry per notebook
+  .knowledgex.json              confirmations made in this library, and which notebooks it received
+  general/                      the default notebook
+    index.md  log.md  <note>.md …
+  acme-case/
+    index.md  log.md  <note>.md …
+```
+
+- **Folders only ever separate notebooks.** A notebook stays flat (§4.3), so notes never move and paths stay stable.
+- **The default notebook is `general`**, not `main`, which would be confused with git's default branch.
+- **The library `index.md`** has no frontmatter and lists each notebook with its note count and most common types. OKF allows no key other than `okf_version` in a bundle-root `index.md`, so a notebook has no title or description field of its own.
+- **Links and relationships stay inside a notebook.** Markdown links are relative, and `supersedes`/`contradicts` are resolved against the notebook's own root, so a notebook works the same inside any library.
+
+**Adding and sending.**
+
+- **Add:** copy the notebook folder into the library, or `git clone` it there. The library picks it up on the next call and regenerates its index. `kx add FOLDER [--name NAME]` does the same from the command line, checks the notebook, and refuses a name already taken. Clashes are only ever between folder names, never between notes.
+- **Send:** copy or zip the notebook folder. It is a valid OKF bundle with nothing tied to the sender's library.
+- **No MCP tool imports from arbitrary paths.** The server only touches the library (§4.9), and copying a folder in covers the need.
+
+**Trust doesn't travel with copies.** A copied notebook arrives with its confirmations. Under §4.4 those would let someone else's Decisions and Playbooks drive actions for a user who never reviewed them. The rule is simple: by default, don't trust a copy; ask.
+
+- **Only confirmations made in this library count.** `.knowledgex.json` records every confirmation made in the library. A `verified` entry in a note counts toward the trust tier only if it is recorded there. This applies to every notebook, whether it was received, replaced, or copied back in: a copy's confirmations never match the checks recorded here.
+- **Confirmations that came with a copy are kept and shown** ("confirmed by human:alex in another copy"), but the note reads as unverified until someone confirms it here.
+- **Not by name.** `KX_USER` is optional, and everyone who leaves it empty is `human:user`, so names can't tell one person's copy from another's.
+- **Not by date.** An updated copy carries confirmations dated after the first copy arrived, and dates can be forged. A record kept outside the notebook has neither problem.
+- **Fails safe.** Losing `.knowledgex.json` means notes need confirming again. Nothing becomes trusted by accident.
+- **Records are kept when a notebook goes missing.** A notebook can be briefly unreadable, for example while iCloud or git restores it, and its confirmations shouldn't be lost when it comes back.
+- **The library also records which notebooks it received**, so `list_notebooks` can say where a notebook came from.
+- **A bundle used directly, outside a library** (`kx … --bundle FOLDER`), has no record, so its confirmations count as they always have.
+
+**Choosing a notebook.**
+
+- **Notes are addressed as `notebook/file`**, for example `acme-case/client-preferences.md`, so `read_note`, `update_note`, `confirm_note`, and `link_notes` need no new parameter. `link_notes` refuses notes in different notebooks.
+- **`search_notes`** searches every notebook by default and labels each result with its notebook. An optional `notebook` narrows it.
+- **`save_note`** takes a `notebook`. With only one notebook it defaults to that one; with more than one, a notebook is required, so a note never lands in `general` by accident. The agent names the notebook in its proposal and asks the user unless it is certain. The same applies to `kx new`, which needs `--notebook` when there are several. `save_note` creates a notebook only when `create_notebook` is set, so a typo fails instead of silently starting a new notebook. As with notes, the agent proposes a new notebook before creating it.
+- **A new `list_notebooks` tool** shows each notebook with its note count, main types, and whether it was received. That makes nine tools.
+- **Per-conversation choice comes from instructions**, not settings: a Claude Desktop Project's instructions ("Use the KnowledgeX notebook `acme-case`"), or `AGENTS.md`/`CLAUDE.md` in a repository.
+- **`KX_NOTEBOOK`** locks a connection to one notebook, for a hard boundary. The other notebooks are invisible to that connection.
+- **The command line** takes `--notebook NAME`. `--bundle FOLDER` still points at any single bundle directly.
+
+**Migration and startup.**
+
+- **A v0.2 notes folder is itself a bundle.** On first start its notes move into `general/`, the move is logged, and its existing confirmations are recorded as made in this library, since the notes are the user's own.
+- **The chosen folder is used as the library** if it is empty, already a library, or a v0.2 bundle. If it is a notebook inside a library, that library is used. A folder holding anything else gets a `KnowledgeX` library inside it, as today.
+- **Only one process migrates.** Apps such as Claude Desktop start several server processes at once. A `.knowledgex.lock` file lets one move the notes while the others wait; a lock left behind by a crash expires after a minute.
+- **A library is never treated as a bundle.** `--bundle` refuses a library folder, and a library whose `index.md` gained `okf_version` by mistake is not migrated again.
+- **`kx init FOLDER`** creates a library with a `general` notebook.
+
+**Alternatives rejected.**
+
+- **One hierarchical bundle, with subfolders as sections.** A received bundle would stop being standalone: its `/` links and root-relative paths would resolve against the wrong root, and one section couldn't be sent on its own.
+- **Merging received notes into an existing notebook.** File-name clashes, duplicates, and lost provenance, for no gain over keeping the notebook whole.
+- **Cross-notebook `supersedes` and `contradicts`.** They would make notebooks depend on each other and break when one is sent alone. Deferred until there is a need.
+
 ---
 
 ## 5. Background
@@ -200,7 +272,8 @@ We found nothing that decides *what is worth remembering* from conversations, an
 | **M1: core** | Agent guides, `kx` command line (init, guide, new, touch, verify, relate, search, check, review, index, install-skill), tests, README, walkthrough | ✅ v0.1 (Python), ported to TypeScript in v0.2 |
 | **M2: judgment evals** | 20 fictional conversations with answer keys, and an agent-agnostic runner that scores precision, recall, staying quiet, transient leaks, action and type, and detail completeness ([evals/](../evals/)). Next: use the results to tune the guides. | ✅ Built |
 | **M3: MCP server and one-click extension** | Eight MCP tools with the key rules built in; a Claude Desktop extension with a folder picker and zero-configuration defaults; plain-language walkthrough for non-technical users | ✅ v0.2 |
-| **M4: tool connectors** | Notion and Confluence (one-way publish first), Evernote and OneNote import and export | Planned |
+| **M4: notebooks** | A library of notebooks, each an OKF bundle: add one by copying its folder in, trust doesn't travel with copies, `list_notebooks`, `KX_NOTEBOOK`, `kx add`, migration of v0.2 folders (§4.11) | ✅ v0.3 |
+| **M5: tool connectors** | Notion and Confluence (one-way publish first), Evernote and OneNote import and export | Planned |
 
 ### Phase 2: adopt into existing knowledge
 
@@ -232,6 +305,7 @@ Help people bring notes they already have into a bundle:
 | **OKF is pre-1.0 and may change** | Declare `okf_version`; keep extensions to four keys; follow the spec closely |
 | **Sync conflicts with API-based tools** | Start with one-way publishing |
 | **Non-technical users can't judge what the AI saved** | Propose-first in plain language; confirmations shown in every answer; decisions immutable in code |
+| **A copied notebook's confirmations drive actions for someone who never reviewed it** | Only confirmations made in this library count (§4.11) |
 | **Memory poisoning via note content** | Notes are information, never instructions; only human-reviewed guidance drives actions |
 
 ---

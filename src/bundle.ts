@@ -1,12 +1,12 @@
-// Core operations on a KnowledgeX bundle: a flat OKF v0.2 folder of markdown notes.
+// Core operations on a KnowledgeX library: a folder of notebooks, each a flat OKF v0.2 bundle of markdown notes.
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse, stringify } from "yaml";
 
-export const VERSION = "0.2.0";
+export const VERSION = "0.3.0";
 export const OKF_VERSION = "0.2";
 export const RESERVED = new Set(["index.md", "log.md"]);
 export const STATUSES = ["draft", "stable", "deprecated"] as const;
@@ -144,11 +144,16 @@ export function changedAt(meta: Meta): Date | null {
   return isMapping(meta.generated) ? parseTime(meta.generated.at) : null;
 }
 
-/** Verifications made at or after the last content change; older ones no longer vouch for it. */
-export function validVerifications(meta: Meta): Record<string, any>[] {
+export const checkKey = (entry: Record<string, any>): string => `${entry.by} ${entry.at}`;
+
+/**
+ * Verifications made at or after the last content change; older ones no longer vouch for it.
+ * `local`, for a note in a library, holds the checks made in this library: only those count, so trust never travels with a copy.
+ */
+export function validVerifications(meta: Meta, local?: Set<string>): Record<string, any>[] {
   const changed = changedAt(meta);
   return asList(meta.verified).filter((entry) => {
-    if (!isMapping(entry)) return false;
+    if (!isMapping(entry) || (local && !local.has(checkKey(entry)))) return false;
     const at = parseTime(entry.at);
     return changed === null || (at !== null && at >= changed);
   });
@@ -157,8 +162,8 @@ export function validVerifications(meta: Meta): Record<string, any>[] {
 export type Trust = "unverified" | "machine-confirmed" | "human-reviewed";
 
 /** OKF trust tier. */
-export function trust(meta: Meta): Trust {
-  const valid = validVerifications(meta);
+export function trust(meta: Meta, local?: Set<string>): Trust {
+  const valid = validVerifications(meta, local);
   if (valid.some((entry) => String(entry.by ?? "").startsWith("human:"))) return "human-reviewed";
   return valid.length ? "machine-confirmed" : "unverified";
 }
@@ -265,6 +270,8 @@ export function renderIndex(root: string, notes: Note[]): string {
 
 export function writeIndex(root: string, notes: Note[] = loadNotes(root)): void {
   writeFileSync(join(root, "index.md"), renderIndex(root, notes), "utf8");
+  const library = dirname(resolve(root));
+  if (existsSync(join(library, STATE_FILE))) writeLibraryIndex(library);
 }
 
 /** Add an entry under today's heading in log.md, newest first. */
@@ -283,7 +290,7 @@ export function appendLog(root: string, kind: string, message: string): void {
 export function ensureBundle(root: string): void {
   mkdirSync(root, { recursive: true });
   if (!existsSync(join(root, "index.md"))) writeIndex(root);
-  if (!existsSync(join(root, "log.md"))) appendLog(root, "Creation", "Started the KnowledgeX bundle.");
+  if (!existsSync(join(root, "log.md"))) appendLog(root, "Creation", "Started the notebook.");
 }
 
 // --- search, check, review ----------------------------------------------------------------------
@@ -400,6 +407,7 @@ export function review(root: string, moment: Date = now()): Map<string, string[]
   const groups = new Map<string, string[]>(
     [
       "Stale",
+      "Confirmed in another copy, not in this library",
       "Edited since last verified",
       "Sources changed since last verified",
       "Superseded but not deprecated",
@@ -416,11 +424,13 @@ export function review(root: string, moment: Date = now()): Map<string, string[]
     const file = rel(note.path, root);
     const item = `${file} (${titleOf(note)})`;
     const active = meta.status !== "deprecated";
-    const valid = validVerifications(meta);
+    const local = localChecks(root, note);
+    const valid = validVerifications(meta, local);
     const verified = asList(meta.verified);
 
     if (active && freshness(meta, moment).startsWith("stale")) push("Stale", `${item}: ${freshness(meta, moment)}`);
-    if (active && verified.length && !valid.length) push("Edited since last verified", item);
+    if (active && local && !valid.length && validVerifications(meta).length) push("Confirmed in another copy, not in this library", item);
+    else if (active && verified.length && !valid.length) push("Edited since last verified", item);
     if (active && !verified.length) push("Never verified", item);
 
     const checked = valid.map((v) => parseTime(v.at)).filter((t): t is Date => t !== null);
@@ -471,9 +481,10 @@ export function configPath(): string {
   return join(process.env.XDG_CONFIG_HOME || join(homedir(), ".config"), "knowledgex", "config.json");
 }
 
-/** The bundle folder from $KX_BUNDLE, then from `kx init`; undefined if neither is set. */
-export function configuredBundle(): string | undefined {
-  const configured = process.env.KX_BUNDLE || (existsSync(configPath()) ? JSON.parse(readFileSync(configPath(), "utf8")).bundle : undefined);
+/** The library folder from $KX_BUNDLE, then from `kx init`; undefined if neither is set. */
+export function configuredLibrary(): string | undefined {
+  const saved = existsSync(configPath()) ? JSON.parse(readFileSync(configPath(), "utf8")) : {};
+  const configured = process.env.KX_BUNDLE || saved.library || saved.bundle; // `bundle`: written by v0.2
   return configured ? expandHome(configured) : undefined;
 }
 
@@ -526,7 +537,7 @@ export function createNote(root: string, input: NewNote): Note {
 
 /** Record a content change. Returns the trust tier the note had before, which the change has now reset. */
 export function touchNote(root: string, note: Note, by: string, message?: string): Trust {
-  const before = trust(note.meta);
+  const before = trust(note.meta, localChecks(root, note));
   const checks = asList(note.meta.verified).map((v) => (isMapping(v) ? parseTime(v.at) : null)).filter((t): t is Date => t !== null);
   const lastCheck = checks.length ? Math.max(...checks.map((t) => t.getTime())) : 0;
   // Timestamps have one-second resolution: an edit must land strictly after the last check, or the check would still count.
@@ -567,13 +578,15 @@ export function updateNote(root: string, note: Note, changes: NoteChanges, by: s
 export function verifyNote(root: string, note: Note, by: string): Trust {
   const changed = changedAt(note.meta);
   const stamp = new Date(Math.max(now().getTime(), changed?.getTime() ?? 0)); // never before the change it vouches for
-  note.meta.verified = [...asList(note.meta.verified), { by, at: iso(stamp) }];
+  const entry = { by, at: iso(stamp) };
+  note.meta.verified = [...asList(note.meta.verified), entry];
+  recordCheck(root, note, entry);
   const months = expiryMonths(note.meta.type);
   if (months && "stale_after" in note.meta) note.meta.stale_after = `${addMonths(day(stamp), months)}T00:00:00Z`; // a checked note starts a fresh expiry window
   writeNote(note);
   appendLog(root, "Verification", `[${titleOf(note)}](${encodePath(rel(note.path, root))}) checked by ${by}.`);
   writeIndex(root);
-  return trust(note.meta);
+  return trust(note.meta, localChecks(root, note));
 }
 
 function ensureLink(root: string, note: Note, other: Note, label: string): void {
@@ -601,4 +614,213 @@ export function relateNotes(root: string, source: Note, relation: Relation, targ
     appendLog(root, "Contradiction", pair);
   }
   writeIndex(root);
+}
+
+// --- notebooks: a library of bundles --------------------------------------------------------------
+
+export const DEFAULT_NOTEBOOK = "general";
+const STATE_FILE = ".knowledgex.json";
+const LOCK_FILE = ".knowledgex.lock";
+const NOTEBOOK_NAME = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+type NotebookRecord = { received?: string; confirmed?: Record<string, string[]> };
+type LibraryState = { notebooks: Record<string, NotebookRecord> };
+
+function readState(library: string): LibraryState {
+  try {
+    const state = JSON.parse(readFileSync(join(library, STATE_FILE), "utf8"));
+    if (isMapping(state?.notebooks)) return state;
+  } catch {
+    // missing or unreadable: no confirmation counts until made again, which fails safe
+  }
+  return { notebooks: {} };
+}
+
+function writeState(library: string, state: LibraryState): void {
+  writeFileSync(join(library, STATE_FILE), JSON.stringify(state, null, 2) + "\n", "utf8");
+}
+
+/** The notebooks in a library: subfolders that are OKF bundles. */
+export function notebooks(library: string): string[] {
+  if (!existsSync(library)) return [];
+  return readdirSync(library, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && !entry.name.startsWith(".") && isBundle(join(library, entry.name)))
+    .map((entry) => entry.name)
+    .sort();
+}
+
+/** True if the folder is a library: it has a state file, or holds nothing but notebooks and the library index. */
+export function isLibrary(dir: string): boolean {
+  if (existsSync(join(dir, STATE_FILE))) return true;
+  const found = new Set(notebooks(dir));
+  return found.size > 0 && readdirSync(dir).every((name) => name.startsWith(".") || name === "index.md" || found.has(name));
+}
+
+/**
+ * The library for a chosen folder: the library a chosen notebook belongs to; the folder itself if it is empty,
+ * a library, or a v0.2 bundle; otherwise a KnowledgeX folder inside it.
+ */
+export function libraryFor(folder: string): string {
+  const parent = dirname(resolve(folder));
+  if (isBundle(folder) && existsSync(join(parent, STATE_FILE))) return parent;
+  const busy = existsSync(folder) && !isBundle(folder) && !isLibrary(folder) && readdirSync(folder).some((name) => !name.startsWith("."));
+  return busy ? join(folder, "KnowledgeX") : folder;
+}
+
+/**
+ * Prepare a library and return its notebooks. A v0.2 bundle moves into `general` and keeps its confirmations,
+ * an empty library gets `general`, and any other notebook seen for the first time is recorded as received.
+ */
+export function openLibrary(library: string): string[] {
+  mkdirSync(library, { recursive: true });
+  if (migrating(library)) return notebooks(library);
+  if (isV02Bundle(library) && !migrate(library)) return notebooks(library);
+  const state = readState(library);
+  const before = JSON.stringify(state);
+  const stamp = iso(now());
+  let names = notebooks(library);
+  if (!names.length) {
+    state.notebooks[DEFAULT_NOTEBOOK] = {};
+    ensureBundle(join(library, DEFAULT_NOTEBOOK));
+    names = [DEFAULT_NOTEBOOK];
+  }
+  // Records of notebooks that are missing are kept: a notebook may be only briefly unreadable, such as while a sync
+  // client restores it. Keeping them is safe, because a copy's confirmations never match checks recorded here.
+  for (const name of names) state.notebooks[name] ??= { received: stamp };
+  if (JSON.stringify(state) !== before) writeState(library, state);
+  writeLibraryIndex(library);
+  return names;
+}
+
+/** A folder that holds notes directly, as v0.2 did, rather than an already-started library. */
+function isV02Bundle(folder: string): boolean {
+  return isBundle(folder) && !existsSync(join(folder, STATE_FILE)) && !notebooks(folder).length;
+}
+
+/** True while another process is moving a v0.2 folder into `general`. A lock over a minute old is left from a crash. */
+function migrating(library: string): boolean {
+  const lock = join(library, LOCK_FILE);
+  try {
+    if (Date.now() - statSync(lock).mtimeMs < 60_000) return true;
+    rmSync(lock, { force: true });
+  } catch {
+    // no lock
+  }
+  return false;
+}
+
+/** Move a v0.2 folder's notes into `general`, keeping their confirmations. False if another process is doing it. */
+function migrate(library: string): boolean {
+  const lock = join(library, LOCK_FILE);
+  try {
+    writeFileSync(lock, "", { flag: "wx" }); // several app processes can start at once; only one migrates
+  } catch {
+    return false;
+  }
+  try {
+    if (!isV02Bundle(library)) return true; // finished by another process just before the lock was taken
+    const target = join(library, DEFAULT_NOTEBOOK);
+    if (existsSync(target)) throw new KxError(`Can't turn ${library} into a library of notebooks: it already has a ${DEFAULT_NOTEBOOK} folder.`);
+    mkdirSync(target);
+    for (const name of readdirSync(library)) {
+      if (!name.startsWith(".") && name !== DEFAULT_NOTEBOOK) renameSync(join(library, name), join(target, name));
+    }
+    appendLog(target, "Update", `Became the ${DEFAULT_NOTEBOOK} notebook of a KnowledgeX library.`);
+    // The user's own notes, not a copy: their existing confirmations are recorded as made here.
+    const confirmed: Record<string, string[]> = {};
+    for (const note of loadNotes(target)) {
+      const checks = validVerifications(note.meta).map(checkKey);
+      if (checks.length) confirmed[rel(note.path, target)] = checks;
+    }
+    writeState(library, { notebooks: { [DEFAULT_NOTEBOOK]: { confirmed } } });
+    return true;
+  } finally {
+    rmSync(lock, { force: true });
+  }
+}
+
+/** Start a new, empty notebook in a library. */
+export function createNotebook(library: string, name: string): void {
+  if (!NOTEBOOK_NAME.test(name)) throw new KxError(`Notebook names use lowercase letters, digits, and hyphens, like client-acme. Got: ${name}`);
+  openLibrary(library); // a v0.2 folder must become a library first, or the new notebook would end up inside general
+  if (existsSync(join(library, name))) throw new KxError(`There is already a notebook or folder named ${name}.`);
+  const state = readState(library);
+  state.notebooks[name] = {};
+  writeState(library, state);
+  ensureBundle(join(library, name));
+}
+
+/** Copy a bundle into the library as a received notebook. Returns its name. */
+export function addNotebook(library: string, from: string, name?: string): string {
+  const source = expandHome(from);
+  if (!isBundle(source)) throw new KxError(`${from} is not an OKF bundle: it needs an index.md with okf_version.`);
+  const target = name ?? slugify(basename(source));
+  if (!NOTEBOOK_NAME.test(target)) throw new KxError(`Notebook names use lowercase letters, digits, and hyphens, like client-acme. Got: ${target}`);
+  if (existsSync(join(library, target))) throw new KxError(`There is already a notebook or folder named ${target}. Choose another name.`);
+  openLibrary(library);
+  cpSync(source, join(library, target), { recursive: true });
+  const state = readState(library);
+  state.notebooks[target] = { received: iso(now()) }; // a fresh record, even if the library once had a notebook by this name
+  writeState(library, state);
+  openLibrary(library);
+  return target;
+}
+
+/** One line about a notebook: how many notes, of which types, and whether it was received. */
+export function notebookSummary(library: string, name: string): string {
+  const notes = loadNotes(join(library, name)).filter((note) => !note.error && note.meta.status !== "deprecated");
+  const counts = new Map<string, number>();
+  for (const note of notes) counts.set(String(note.meta.type ?? "?"), (counts.get(String(note.meta.type ?? "?")) ?? 0) + 1);
+  const types = [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 3).map(([type]) => type);
+  const received = readState(library).notebooks[name]?.received;
+  return [
+    `${notes.length} note${notes.length === 1 ? "" : "s"}${types.length ? ` (mostly ${types.join(", ")})` : ""}`,
+    ...(received ? [`received ${received.slice(0, 10)}`] : []),
+  ].join("; ");
+}
+
+function writeLibraryIndex(library: string): void {
+  const lines = ["# Notebooks", "", ...notebooks(library).map((name) => `* [${name}](${encodePath(name)}/) - ${notebookSummary(library, name)}`), ""];
+  const path = join(library, "index.md");
+  const text = lines.join("\n");
+  if (!existsSync(path) || readFileSync(path, "utf8") !== text) writeFileSync(path, text, "utf8");
+}
+
+/** For a note in a library's notebook, the checks made in this library; undefined for a bundle outside a library. */
+export function localChecks(root: string, note: Note): Set<string> | undefined {
+  const library = dirname(resolve(root));
+  if (!existsSync(join(library, STATE_FILE))) return undefined;
+  return new Set(readState(library).notebooks[basename(resolve(root))]?.confirmed?.[rel(note.path, root)] ?? []);
+}
+
+function recordCheck(root: string, note: Note, entry: Record<string, any>): void {
+  const library = dirname(resolve(root));
+  if (!existsSync(join(library, STATE_FILE))) return;
+  const state = readState(library);
+  const record = (state.notebooks[basename(resolve(root))] ??= {});
+  const file = rel(note.path, root);
+  record.confirmed = { ...record.confirmed, [file]: [...(record.confirmed?.[file] ?? []), checkKey(entry)] };
+  writeState(library, state);
+}
+
+/** A note's id across the library: `notebook/file`. */
+export const noteId = (root: string, path: string): string => `${basename(resolve(root))}/${rel(path, root)}`;
+
+/** Open a note by `notebook/file`, or by file name alone when exactly one of the given notebooks has it. */
+export function findNote(library: string, names: string[], id: string): { root: string; note: Note } {
+  const slash = id.indexOf("/");
+  if (slash > 0 && names.includes(id.slice(0, slash))) {
+    const root = join(library, id.slice(0, slash));
+    return { root, note: openNote(root, id.slice(slash + 1)) };
+  }
+  const found = names.flatMap((name) => {
+    try {
+      return [{ root: join(library, name), note: openNote(join(library, name), id) }];
+    } catch (error) {
+      if (error instanceof KxError) return [];
+      throw error;
+    }
+  });
+  if (found.length === 1) return found[0];
+  if (found.length) throw new KxError(`${id} is in more than one notebook. Name the notebook, like ${noteId(found[0].root, found[0].note.path)}.`);
+  throw new KxError(`Note not found: ${id}`);
 }

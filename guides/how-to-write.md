@@ -1,15 +1,17 @@
 # How to write
 
-Notes follow the [Open Knowledge Format (OKF) v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md), plus four extra keys that OKF allows. The bundle folder is a valid OKF bundle exactly as it sits on disk. Any OKF tool can read it, and any markdown editor can open it.
+Notes follow the [Open Knowledge Format (OKF) v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md), plus four extra keys that OKF allows. Each notebook folder is a valid OKF bundle exactly as it sits on disk. Any OKF tool can read it, and any markdown editor can open it.
 
-## The bundle
+## The notebook
 
-- **One flat folder.** No subfolders.
+- **A library holds notebooks.** The library folder has one subfolder per notebook, a generated `index.md` listing them, and `.knowledgex.json`, which records confirmations made in the library. Don't edit either file by hand.
+- **Each notebook is one flat folder.** No subfolders.
 - **`index.md`** lists every note by type. It is generated; `kx` rebuilds it after each change.
 - **`log.md`** is a dated changelog, newest first. `kx` commands add to it.
 - **Every other `.md` file is a note.**
 - **File names are kebab-case**, like `use-postgresql-as-the-job-queue.md`. The display name lives in `title`. Creating a note chooses the file name.
 - **Link with standard relative markdown links**, like `[Job queue decision](use-postgresql-as-the-job-queue.md)`. Don't use `[[wikilinks]]`; OKF doesn't define them and other tools can't follow them.
+- **Links and relationships stay inside a notebook**, so a notebook still works when it is copied on its own.
 
 ## Note types
 
@@ -137,5 +139,5 @@ If you have neither the tools nor the `kx` command, you can still follow the for
 
 - write the frontmatter shown above
 - update `generated` whenever you change content
-- add a line under today's date at the top of `log.md`, like `* **Update**: Updated [Title](file.md).`
+- add a line under today's date at the top of the notebook's `log.md`, like `* **Update**: Updated [Title](file.md).`
 - add the note to `index.md` under its type's heading, like `* [Title](file.md) - description`

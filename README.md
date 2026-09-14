@@ -8,7 +8,7 @@ KnowledgeX works like a careful assistant taking notes. At the end of a conversa
 
 Your notes are plain text files in a folder on your computer.
 
-> **Status:** early (v0.2). Things may still change.
+> **Status:** early (v0.3). Things may still change.
 
 ## Get started
 
@@ -133,6 +133,8 @@ Say yes, "only the first", or no. If nothing is worth keeping, it won't ask. You
 
 **A check-up.** Ask *"Do any of my notes need attention?"* Your AI lists notes that may be out of date, conflict with each other, or were never confirmed, and suggests fixes.
 
+**Notebooks.** Keep a client or project in its own notebook: say *"start a notebook for the Acme case."* Everything else goes in the `general` notebook. To share a notebook, send its folder. To add one you received, drop the folder into your notes folder. Notes someone else confirmed start unconfirmed for you, until you confirm them yourself.
+
 ## Your notes and your privacy
 
 - **Notes stay on your computer**, as plain text files in the folder you chose. You can open, read, back up, or delete them like any other files.
@@ -146,7 +148,7 @@ The `kx` command line (`npm install -g knowledgex`) works for scripts and for co
 
 ## How it works
 
-- **The notes folder is an OKF bundle:** one markdown file per note, plus an index and a change log. Every note records who wrote it, who confirmed it, where its facts came from, and when it goes out of date.
+- **The notes folder holds notebooks, and each notebook is an [OKF](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) bundle:** one markdown file per note, plus an index and a change log. Every note records who wrote it, who confirmed it, where its facts came from, and when it goes out of date.
 - **The agent guides** tell the AI what's worth keeping, how to write it, how to look things up, and how to keep notes current. Read them in [`guides/`](guides/).
 - **The MCP server and `kx` command** do the bookkeeping, so notes stay consistent whichever AI writes them.
 
@@ -184,7 +186,7 @@ Tests run automatically on every pull request, on macOS, Windows, and Linux.
 **Releasing.** Set the new version in `package.json`, `manifest.json`, and `VERSION` in `src/bundle.ts` (the tests check they match), merge to `main`, then tag and push. The release workflow publishes the package to npm (with provenance, through trusted publishing, so no npm token is stored) and publishes `KnowledgeX.mcpb` as a GitHub release, which the download links in this README point to. Re-running a failed release skips the steps that already succeeded.
 
 ```bash
-git tag v0.2.0 && git push origin v0.2.0
+git tag v0.3.0 && git push origin v0.3.0
 ```
 
 A tag with a suffix, such as `v0.3.0-rc.1` (with the same version in the three files), is published as a pre-release on GitHub and under npm's `next` tag, so the download links and `npm install knowledgex` keep pointing at the last stable version.

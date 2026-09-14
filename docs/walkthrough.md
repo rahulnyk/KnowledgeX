@@ -95,9 +95,22 @@ Claude lists notes that may be out of date, notes that conflict, and notes you'v
 
 ---
 
-## 8. Where your notes are, and privacy
+## 8. Notebooks
 
-- **Your notes are in the folder you chose**, by default `Documents/KnowledgeX`. Open it like any folder. Each note is a plain text file you can read.
+Your notes live in **notebooks**. Everything goes in one called **general** until you want more. (If you've heard of the Open Knowledge Format: each notebook is an OKF bundle, a standard folder of notes that other tools can read.)
+
+- **Start a notebook for a client or project.** Say *"start a notebook for the Acme case."* Claude may also suggest one, and always asks before creating it.
+- **Claude tells you where each note goes.** Once you have more than one notebook, every suggestion names the notebook, such as *"I'd keep this in your Acme notebook."* If Claude isn't sure, it asks you which one.
+- **Keep a Claude Project's chats in its notebook.** Add a line to the project's instructions, such as: *Use the KnowledgeX notebook acme-case.*
+- **Share a notebook.** Each notebook is a folder inside your notes folder. Zip that folder and send it.
+- **Add a notebook someone sent you.** Unzip it and drag the folder into your notes folder. Claude finds it in your next chat.
+- **Notes you receive start unconfirmed.** Even if the sender confirmed them, that doesn't count for you. Claude tells you who confirmed a note before, and asks before relying on it. Confirm the ones you agree with.
+
+---
+
+## 9. Where your notes are, and privacy
+
+- **Your notes are in the folder you chose**, by default `Documents/KnowledgeX`, with one folder inside it per notebook. Open it like any folder. Each note is a plain text file you can read.
 - **You can back it up**, sync it with your usual cloud storage, or delete notes you don't want.
 - **KnowledgeX itself never connects to the internet.** When Claude uses a note in a conversation, the note's text becomes part of that conversation, like anything else you type.
 - **Claude is instructed never to save passwords or account numbers**, and to ask before saving confidential client or personal information.
@@ -106,7 +119,7 @@ Claude lists notes that may be out of date, notes that conflict, and notes you'v
 
 ---
 
-## 9. Troubleshooting
+## 10. Troubleshooting
 
 | Problem | What to do |
 |---|---|
@@ -114,7 +127,8 @@ Claude lists notes that may be out of date, notes that conflict, and notes you'v
 | Claude doesn't seem to use KnowledgeX | Check **Settings → Extensions**: KnowledgeX should be turned on. Start a new chat after installing. |
 | Claude never offers to save anything | Ask directly: "Is anything worth keeping?" Most conversations genuinely have nothing to keep. |
 | Claude saves things you don't want | Say no when it proposes them. To remove a saved note, ask Claude to retire it, or delete the file from your notes folder. |
-| I want my notes in a different folder | In **Settings → Extensions → KnowledgeX**, change **Notes folder**, then move your existing note files there. |
+| I want my notes in a different folder | Quit Claude Desktop and move your whole notes folder to the new place. Then, in **Settings → Extensions → KnowledgeX**, choose it as **Notes folder**. Moving the whole folder keeps a hidden file that remembers your confirmations. |
+| My notes suddenly show as unconfirmed | The hidden file that remembers your confirmations was lost, for example because the notebook folders were copied without it. Ask Claude for a check-up and confirm the notes again. |
 
 ---
 
