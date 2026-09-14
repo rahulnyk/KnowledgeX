@@ -8,5 +8,5 @@ echo "$reply" | grep -q '"serverInfo":{"name":"knowledgex"' || { echo "The exten
 # Claude Desktop can pass a default with its placeholder unfilled; the server must fall back to ~/Documents/KnowledgeX.
 home=$(mktemp -d)
 echo "$request" | HOME="$home" KX_BUNDLE='${DOCUMENTS}/KnowledgeX' timeout 30 node build/mcpb/server/mcp.mjs > /dev/null
-[ -f "$home/Documents/KnowledgeX/index.md" ] || { echo "An unfilled placeholder did not fall back to ~/Documents/KnowledgeX"; exit 1; }
+[ -f "$home/Documents/KnowledgeX/general/index.md" ] || { echo "An unfilled placeholder did not fall back to ~/Documents/KnowledgeX"; exit 1; }
 echo "The extension started and answered."

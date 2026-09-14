@@ -27,7 +27,7 @@ const TEMPLATES: Record<string, string> = {
 };
 const SKILL_HEADER = `---
 name: knowledgex
-description: Long-term memory with judgment. Use when the user wants to save, remember, or note something; when recalling earlier decisions, preferences, lessons, people, or plans; before answering questions that depend on what was decided or learned before; and at the end of substantial conversations to propose what is worth keeping. Notes live in an Open Knowledge Format (OKF) bundle managed with the \`kx\` command.
+description: Long-term memory with judgment. Use when the user wants to save, remember, or note something; when recalling earlier decisions, preferences, lessons, people, or plans; before answering questions that depend on what was decided or learned before; and at the end of substantial conversations to propose what is worth keeping. Notes live in notebooks (Open Knowledge Format bundles) managed with the \`kx\` command.
 ---
 
 `;
@@ -36,7 +36,7 @@ const HELP = `kx ${kb.VERSION}: durable, trustworthy knowledge for any AI agent.
 
 Usage: kx <command> [options]
 
-  init FOLDER                                   create a bundle and make it the default
+  init FOLDER                                   create a library of notebooks and make it the default
   guide [overview|what|write|retrieve|maintain|all]
                                                 print the agent guide
   new TYPE "Title" --description TEXT --by ID   create a note from its type's template
@@ -46,20 +46,37 @@ Usage: kx <command> [options]
   relate FILE supersedes|contradicts FILE --by ID
                                                 mark a replacement or a conflict
   search [words] [--type TYPE] [--all]          find notes, with trust and freshness
-  check                                         validate the bundle
+  check                                         validate a notebook
   review                                        list maintenance work
   index                                         rebuild index.md
+  notebooks [create NAME]                       list notebooks, or start a new one
+  add FOLDER [--name NAME]                      copy a notebook someone sent into the library
   install-skill FOLDER                          write KnowledgeX as an Agent Skill into a skills folder
   mcp                                           run the MCP server (for AI apps)
 
-Options: --bundle FOLDER (default: $KX_BUNDLE, then the folder set by \`kx init\`)
+Options: --notebook NAME (default: $KX_NOTEBOOK, then general), or --bundle FOLDER to use any bundle directly.
+The library is $KX_BUNDLE, or else the folder set by \`kx init\`.
 --by is who is acting: <agent>/<model>, human:<id>, or process:<name>.`;
 
-function bundleRoot(explicit?: string): string {
-  const root = explicit ? kb.expandHome(explicit) : kb.configuredBundle();
-  if (!root) throw new kb.KxError("No bundle yet. Create one with: kx init <folder>");
-  if (!existsSync(root)) throw new kb.KxError(`Bundle folder not found: ${root}`);
-  return root;
+function library(): string {
+  const configured = kb.configuredLibrary();
+  if (!configured) throw new kb.KxError("No library yet. Create one with: kx init <folder>");
+  if (!existsSync(configured)) throw new kb.KxError(`Library folder not found: ${configured}`);
+  return kb.libraryFor(configured);
+}
+
+/** The folder a command works on: --bundle as given, or a notebook in the library. */
+function bundleRoot(values: { bundle?: string; notebook?: string }): string {
+  if (values.bundle) {
+    const root = kb.expandHome(values.bundle);
+    if (!existsSync(root)) throw new kb.KxError(`Bundle folder not found: ${root}`);
+    return root;
+  }
+  const home = library();
+  const names = kb.openLibrary(home);
+  const name = values.notebook || process.env.KX_NOTEBOOK || kb.DEFAULT_NOTEBOOK;
+  if (!names.includes(name)) throw new kb.KxError(`No notebook named ${name}. Notebooks: ${names.join(", ")}`);
+  return join(home, name);
 }
 
 function need(value: string | undefined, what: string): string {
@@ -81,6 +98,8 @@ export function main(argv: string[], print: (text: string) => void = console.log
     allowPositionals: true,
     options: {
       bundle: { type: "string" },
+      notebook: { type: "string" },
+      name: { type: "string" },
       by: { type: "string" },
       description: { type: "string" },
       tags: { type: "string" },
@@ -105,15 +124,12 @@ export function main(argv: string[], print: (text: string) => void = console.log
 
   switch (command) {
     case "init": {
-      const root = kb.expandHome(need(args[0], "FOLDER"));
-      kb.ensureBundle(root);
+      const root = kb.libraryFor(kb.expandHome(need(args[0], "FOLDER")));
+      const names = kb.openLibrary(root);
       mkdirSync(join(kb.configPath(), ".."), { recursive: true });
-      writeFileSync(kb.configPath(), JSON.stringify({ bundle: root }, null, 2) + "\n");
-      print(`Bundle ready: ${root}`);
-      const foreign = kb.loadNotes(root).filter((note) => note.error || !note.meta.type);
-      if (foreign.length) {
-        print(`Heads-up: ${foreign.length} markdown file(s) here are not OKF notes, and \`kx check\` will flag them. An empty folder works best.`);
-      }
+      writeFileSync(kb.configPath(), JSON.stringify({ library: root }, null, 2) + "\n");
+      print(`Library ready: ${root}`);
+      print(`Notebooks: ${names.join(", ")}`);
       print("Next: connect your agent (see the README), or read the agent guide with `kx guide`.");
       return 0;
     }
@@ -124,7 +140,7 @@ export function main(argv: string[], print: (text: string) => void = console.log
       return 0;
     }
     case "new": {
-      const root = bundleRoot(values.bundle);
+      const root = bundleRoot(values);
       const type = need(args[0], "TYPE");
       const title = need(args[1], '"Title"');
       if (values.status && values.status !== "draft" && values.status !== "stable") throw new kb.KxError("--status must be draft or stable");
@@ -148,7 +164,7 @@ export function main(argv: string[], print: (text: string) => void = console.log
       return 0;
     }
     case "touch": {
-      const root = bundleRoot(values.bundle);
+      const root = bundleRoot(values);
       const note = kb.openNote(root, need(args[0], "FILE"));
       const before = kb.touchNote(root, note, actor(values.by), values.message);
       print(`Recorded the change to ${kb.rel(note.path, root)}.`);
@@ -156,14 +172,14 @@ export function main(argv: string[], print: (text: string) => void = console.log
       return 0;
     }
     case "verify": {
-      const root = bundleRoot(values.bundle);
+      const root = bundleRoot(values);
       const note = kb.openNote(root, need(args[0], "FILE"));
       const by = actor(values.by);
       print(`${kb.rel(note.path, root)} is now ${kb.verifyNote(root, note, by)}.`);
       return 0;
     }
     case "relate": {
-      const root = bundleRoot(values.bundle);
+      const root = bundleRoot(values);
       const relation = need(args[1], "supersedes|contradicts") as kb.Relation;
       if (!kb.RELATIONS.includes(relation)) throw new kb.KxError("The relation must be supersedes or contradicts.");
       actor(values.by); // required for a consistent interface; a relation is metadata, not a content change
@@ -174,15 +190,15 @@ export function main(argv: string[], print: (text: string) => void = console.log
       return 0;
     }
     case "search": {
-      const root = bundleRoot(values.bundle);
+      const root = bundleRoot(values);
       const { notes, successors } = kb.search(root, args.join(" "), values.type, values.all);
-      print(`Bundle: ${root}`);
+      print(`Notebook: ${root}`);
       if (!notes.length) print("No matching notes.");
       for (const note of notes) {
         const file = kb.rel(note.path, root);
         const meta = note.meta;
         print(`\n${file}: ${kb.titleOf(note)}`);
-        print(`    ${[meta.type ?? "?", kb.trust(meta), kb.freshness(meta), meta.status ?? "?"].join(" · ")}`);
+        print(`    ${[meta.type ?? "?", kb.trust(meta, kb.localChecks(root, note)), kb.freshness(meta), meta.status ?? "?"].join(" · ")}`);
         if (meta.description) print(`    ${meta.description}`);
         if (successors.has(file)) print(`    superseded by: ${successors.get(file)!.join(", ")}`);
         const contradicts = kb.relationTargets(note, root, "contradicts");
@@ -191,7 +207,7 @@ export function main(argv: string[], print: (text: string) => void = console.log
       return 0;
     }
     case "check": {
-      const root = bundleRoot(values.bundle);
+      const root = bundleRoot(values);
       const findings = kb.check(root);
       for (const f of findings) print(`${f.level.padEnd(7)} ${f.file}: ${f.message}`);
       const errors = findings.filter((f) => f.level === "error").length;
@@ -199,17 +215,37 @@ export function main(argv: string[], print: (text: string) => void = console.log
       return errors ? 1 : 0;
     }
     case "review": {
-      const root = bundleRoot(values.bundle);
+      const root = bundleRoot(values);
       const groups = kb.review(root);
-      print(`# KnowledgeX review, ${kb.day(kb.now())}\n\nBundle: ${root}\n`);
+      print(`# KnowledgeX review, ${kb.day(kb.now())}\n\nNotebook: ${root}\n`);
       if (!groups.size) print("Nothing needs attention.");
       for (const [kind, items] of groups) print(`## ${kind}\n\n${items.map((item) => `- [ ] ${item}`).join("\n")}\n`);
       return 0;
     }
     case "index": {
-      const root = bundleRoot(values.bundle);
+      const root = bundleRoot(values);
       kb.writeIndex(root);
       print(`Rebuilt ${join(root, "index.md")}`);
+      return 0;
+    }
+    case "notebooks": {
+      const home = library();
+      if (args[0] === "create") {
+        kb.createNotebook(home, need(args[1], "NAME"));
+        print(`Started the notebook ${args[1]} in ${home}`);
+        return 0;
+      }
+      if (args[0]) throw new kb.KxError(`Unknown notebooks command: ${args[0]}. Use \`kx notebooks\` or \`kx notebooks create NAME\`.`);
+      for (const name of kb.openLibrary(home)) print(`${name}: ${kb.notebookSummary(home, name)}`);
+      return 0;
+    }
+    case "add": {
+      const home = library();
+      const name = kb.addNotebook(home, need(args[0], "FOLDER"), values.name);
+      const findings = kb.check(join(home, name));
+      const errors = findings.filter((f) => f.level === "error").length;
+      print(`Added the notebook ${name}. Its notes count as unconfirmed until you confirm them here.`);
+      if (findings.length) print(`\`kx check --notebook ${name}\` found ${errors} error(s) and ${findings.length - errors} warning(s).`);
       return 0;
     }
     case "install-skill": {

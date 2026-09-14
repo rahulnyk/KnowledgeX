@@ -1,6 +1,6 @@
 // End-to-end checks for the kx command line, the core library, and the MCP server. Run with: pnpm test
 import assert from "node:assert/strict";
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { test } from "node:test";
@@ -25,9 +25,10 @@ function kx(...args: string[]): { code: number; out: string } {
 
 function tempDir(t: { after: (fn: () => void) => void }): string {
   const dir = mkdtempSync(join(tmpdir(), "kx-test-"));
-  const saved = { XDG_CONFIG_HOME: process.env.XDG_CONFIG_HOME, KX_BUNDLE: process.env.KX_BUNDLE };
+  const saved = { XDG_CONFIG_HOME: process.env.XDG_CONFIG_HOME, KX_BUNDLE: process.env.KX_BUNDLE, KX_NOTEBOOK: process.env.KX_NOTEBOOK };
   process.env.XDG_CONFIG_HOME = join(dir, "config");
   delete process.env.KX_BUNDLE;
+  delete process.env.KX_NOTEBOOK;
   t.after(() => {
     rmSync(dir, { recursive: true, force: true });
     for (const [key, value] of Object.entries(saved)) value === undefined ? delete process.env[key] : (process.env[key] = value);
@@ -109,9 +110,11 @@ test("the code and the guides agree", () => {
 
 test("command-line workflow", (t) => {
   const dir = tempDir(t);
-  const root = join(dir, "bundle");
-  assert.equal(kx("init", root).code, 0);
+  const library = join(dir, "library");
+  assert.equal(kx("init", library).code, 0);
+  const root = join(library, "general");
   assert.match(readFileSync(join(root, "index.md"), "utf8"), /okf_version: "0.2"/);
+  assert.match(readFileSync(join(library, "index.md"), "utf8"), /\* \[general\]\(general\/\)/);
 
   let result = kx("new", "Decision", "Use PostgreSQL as the job queue", "--description", "Jobs live in PostgreSQL until volume needs a dedicated queue.", "--by", AGENT);
   const old = result.out.trim();
@@ -163,8 +166,9 @@ test("command-line workflow", (t) => {
 });
 
 test("MCP server", async (t) => {
-  const root = join(tempDir(t), "notes");
-  const server = createServer(root, "Alex Doe");
+  const library = join(tempDir(t), "notes");
+  const root = join(library, "general");
+  const server = createServer(library, "Alex Doe");
   const client = new Client({ name: "test-app", version: "2.0" });
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
@@ -177,28 +181,29 @@ test("MCP server", async (t) => {
   assert.ok(existsSync(join(root, "index.md")), "the notes folder is created on first run");
   assert.match(client.getInstructions() ?? "", /long-term memory/);
   const tools = (await client.listTools()).tools.map((tool) => tool.name).sort();
-  assert.deepEqual(tools, ["check_up", "confirm_note", "link_notes", "read_guide", "read_note", "save_note", "search_notes", "update_note"]);
+  assert.deepEqual(tools, ["check_up", "confirm_note", "link_notes", "list_notebooks", "read_guide", "read_note", "save_note", "search_notes", "update_note"]);
   assert.match((await call("read_guide", { topic: "what" })).text, /five gates/i);
 
   const body = "_Chosen in 2026 while volume was low._\n\n## Decision\n- Keep background jobs in PostgreSQL.\n";
   let result = await call("save_note", { type: "Decision", title: "Keep jobs in PostgreSQL", description: "Background jobs stay in PostgreSQL for now.", body });
   assert.equal(result.isError, false, result.text);
-  const file = "keep-jobs-in-postgresql.md";
-  assert.equal(kb.readNote(join(root, file)).meta.generated.by, "test-app/2.0", "authorship comes from the connected app");
+  assert.match(result.text, /general\/keep-jobs-in-postgresql\.md/);
+  const file = "general/keep-jobs-in-postgresql.md";
+  assert.equal(kb.readNote(join(library, file)).meta.generated.by, "test-app/2.0", "authorship comes from the connected app");
 
   result = await call("update_note", { file, change_summary: "rewrite", body: "Something else" });
   assert.ok(result.isError && /never edited/.test(result.text), "decisions can't be edited");
 
   result = await call("confirm_note", { file, confirmed_by_user: true });
   assert.match(result.text, /human-reviewed/);
-  assert.equal(kb.readNote(join(root, file)).meta.verified[0].by, "human:alex-doe");
+  assert.equal(kb.readNote(join(library, file)).meta.verified[0].by, "human:alex-doe");
 
   await call("save_note", { type: "Decision", title: "Move jobs to a queue service", description: "Background jobs move to a dedicated queue.", body: "## Decision\n- Use a queue service.\n" });
-  result = await call("link_notes", { file: "move-jobs-to-a-queue-service.md", relation: "supersedes", target: file });
+  result = await call("link_notes", { file: "move-jobs-to-a-queue-service.md", relation: "supersedes", target: file }); // a file name alone works when only one notebook has it
   assert.equal(result.isError, false, result.text);
   result = await call("search_notes", { query: "jobs" });
   assert.ok(result.text.includes("move-jobs-to-a-queue-service.md") && !result.text.includes(file));
-  assert.match((await call("read_note", { file })).text, /replaced by: move-jobs-to-a-queue-service\.md/);
+  assert.match((await call("read_note", { file })).text, /replaced by: general\/move-jobs-to-a-queue-service\.md/);
 
   await call("save_note", { type: "Preference", title: "Writing style", description: "House style for documents.", body: "## Preference\n- Sentence case headings.\n" });
   result = await call("update_note", { file: "writing-style.md", change_summary: "added a rule", body: "## Preference\n- Sentence case headings.\n- No exclamation marks.\n" });
@@ -208,4 +213,87 @@ test("MCP server", async (t) => {
   assert.match((await call("check_up")).text, /Never checked|Never verified/);
   assert.ok((await call("read_note", { file: "../outside.md" })).isError, "paths outside the notes folder are refused");
   assert.equal(kx("check", "--bundle", root).code, 0, "notes saved through the server pass validation");
+
+  // A notebook starts only when asked to, so a typo can't create one.
+  const draft = { type: "Person", title: "Dana Lee", description: "Contact at Acme.", body: "## Who\n- Legal counsel at Acme.\n" };
+  result = await call("save_note", { ...draft, notebook: "acme-cse" });
+  assert.ok(result.isError && /create_notebook/.test(result.text));
+  result = await call("save_note", { ...draft, notebook: "acme-case", create_notebook: true });
+  assert.match(result.text, /Saved acme-case\/dana-lee\.md/);
+  assert.match((await call("search_notes", { query: "acme" })).text, /acme-case\/dana-lee\.md/);
+  assert.ok(!(await call("search_notes", { query: "acme", notebook: "general" })).text.includes("dana-lee"));
+  assert.match((await call("list_notebooks")).text, /acme-case: 1 note \(mostly Person\)\ngeneral: /);
+  result = await call("link_notes", { file: "acme-case/dana-lee.md", relation: "contradicts", target: "general/writing-style.md" });
+  assert.ok(result.isError && /different notebooks/.test(result.text));
+
+  // KX_NOTEBOOK limits a connection to one notebook.
+  const locked = createServer(library, "Alex Doe", "acme-case");
+  const lockedClient = new Client({ name: "test-app", version: "2.0" });
+  const [c2, s2] = InMemoryTransport.createLinkedPair();
+  await Promise.all([locked.connect(s2), lockedClient.connect(c2)]);
+  t.after(() => lockedClient.close());
+  const found = (await lockedClient.callTool({ name: "search_notes", arguments: {} })) as { content: { text: string }[] };
+  assert.ok(found.content[0].text.includes("acme-case/dana-lee.md") && !found.content[0].text.includes("general/"));
+  const refused = (await lockedClient.callTool({ name: "read_note", arguments: { file: "general/writing-style.md" } })) as { isError?: boolean };
+  assert.ok(refused.isError, "other notebooks are out of reach");
+});
+
+test("notebooks", (t) => {
+  const dir = tempDir(t);
+
+  // A v0.2 notes folder becomes the general notebook and keeps the user's own confirmations.
+  const library = join(dir, "notes");
+  kb.ensureBundle(library);
+  const mine = kb.createNote(library, { type: "Preference", title: "Style", description: "d", body: "- one\n", by: AGENT });
+  kb.verifyNote(library, mine, "human:alex");
+  kb.createNotebook(library, "early"); // before anything else opened the folder as a library
+  assert.deepEqual(kb.openLibrary(library), ["early", "general"]);
+  rmSync(join(library, "early"), { recursive: true });
+  assert.deepEqual(kb.openLibrary(library), ["general"]);
+  const general = join(library, "general");
+  assert.equal(kb.trust(kb.openNote(general, "style.md").meta, kb.localChecks(general, kb.openNote(general, "style.md"))), "human-reviewed");
+  assert.ok(!existsSync(join(library, "style.md")) && existsSync(join(library, ".knowledgex.json")));
+  assert.match(readFileSync(join(general, "log.md"), "utf8"), /general notebook/);
+
+  // Someone's bundle, with their own confirmation on it.
+  const theirs = join(dir, "from-sam");
+  kb.ensureBundle(theirs);
+  const playbook = kb.createNote(theirs, { type: "Playbook", title: "Contract review", description: "d", body: "## Steps\n- Liability first.\n", by: AGENT });
+  kb.verifyNote(theirs, playbook, "human:sam");
+  assert.equal(kb.trust(kb.openNote(theirs, "contract-review.md").meta, kb.localChecks(theirs, playbook)), "human-reviewed", "outside a library, checks count");
+
+  // Copied in, trust doesn't travel: the note needs confirming here.
+  process.env.KX_BUNDLE = library;
+  assert.equal(kx("add", theirs).code, 0);
+  const received = join(library, "from-sam");
+  const copy = () => kb.openNote(received, "contract-review.md");
+  assert.equal(kb.trust(copy().meta, kb.localChecks(received, copy())), "unverified");
+  assert.ok(kb.review(received).has("Confirmed in another copy, not in this library"));
+  assert.match(kx("notebooks").out, /from-sam: 1 note \(mostly Playbook\); received \d{4}-/);
+  assert.equal(kx("add", theirs).code, 1, "a taken name is refused");
+  assert.equal(kx("verify", "contract-review.md", "--notebook", "from-sam", "--by", "human:alex").code, 0);
+  assert.equal(kb.trust(copy().meta, kb.localChecks(received, copy())), "human-reviewed");
+
+  // A folder dropped in by hand is picked up and starts unconfirmed too, even under a name the library knew.
+  rmSync(received, { recursive: true });
+  assert.deepEqual(kb.openLibrary(library), ["general"]);
+  cpSync(theirs, received, { recursive: true });
+  assert.deepEqual(kb.openLibrary(library), ["from-sam", "general"]);
+  assert.equal(kb.trust(copy().meta, kb.localChecks(received, copy())), "unverified");
+
+  // A lost record fails safe: nothing counts until confirmed again.
+  unlinkSync(join(library, ".knowledgex.json"));
+  kb.openLibrary(library);
+  const style = kb.openNote(general, "style.md");
+  assert.equal(kb.trust(style.meta, kb.localChecks(general, style)), "unverified");
+
+  // A folder with other files gets a library inside it; a library or an empty folder is used as it is.
+  const busy = join(dir, "Documents");
+  mkdirSync(busy);
+  writeFileSync(join(busy, "taxes.pdf"), "");
+  assert.equal(kb.libraryFor(busy), join(busy, "KnowledgeX"));
+  assert.equal(kb.libraryFor(library), library);
+  assert.equal(kb.libraryFor(join(dir, "new")), join(dir, "new"));
+  assert.equal(kx("notebooks", "create", "Bad Name").code, 1);
+  assert.equal(kx("new", "Idea", "x", "--description", "d", "--by", AGENT, "--notebook", "missing").code, 1);
 });
