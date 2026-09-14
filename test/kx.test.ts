@@ -1,6 +1,6 @@
 // End-to-end checks for the kx command line, the core library, and the MCP server. Run with: pnpm test
 import assert from "node:assert/strict";
-import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, unlinkSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { test } from "node:test";
@@ -274,6 +274,13 @@ test("notebooks", (t) => {
   assert.equal(kx("verify", "contract-review.md", "--notebook", "from-sam", "--by", "human:alex").code, 0);
   assert.equal(kb.trust(copy().meta, kb.localChecks(received, copy())), "human-reviewed");
 
+  // A notebook that is briefly unreadable, as while a sync client restores it, keeps its confirmations.
+  renameSync(join(received, "index.md"), join(received, "index.md.away"));
+  assert.deepEqual(kb.openLibrary(library), ["general"]);
+  renameSync(join(received, "index.md.away"), join(received, "index.md"));
+  assert.deepEqual(kb.openLibrary(library), ["from-sam", "general"]);
+  assert.equal(kb.trust(copy().meta, kb.localChecks(received, copy())), "human-reviewed");
+
   // A folder dropped in by hand is picked up and starts unconfirmed too, even under a name the library knew.
   rmSync(received, { recursive: true });
   assert.deepEqual(kb.openLibrary(library), ["general"]);
@@ -286,6 +293,20 @@ test("notebooks", (t) => {
   kb.openLibrary(library);
   const style = kb.openNote(general, "style.md");
   assert.equal(kb.trust(style.meta, kb.localChecks(general, style)), "unverified");
+
+  // Choosing a notebook as the notes folder means its library; writing to the library root as a bundle is refused.
+  assert.equal(kb.libraryFor(general), library);
+  assert.match(kx("new", "Idea", "x", "--description", "d", "--by", AGENT, "--bundle", library).out, /library of notebooks/);
+
+  // While another process holds the migration lock, a v0.2 folder is left alone; a lock left by a crash expires.
+  const racing = join(dir, "racing");
+  kb.ensureBundle(racing);
+  writeFileSync(join(racing, ".knowledgex.lock"), "");
+  assert.deepEqual(kb.openLibrary(racing), []);
+  assert.ok(existsSync(join(racing, "log.md")), "nothing moved while locked");
+  utimesSync(join(racing, ".knowledgex.lock"), new Date(0), new Date(0));
+  assert.deepEqual(kb.openLibrary(racing), ["general"]);
+  assert.ok(!existsSync(join(racing, ".knowledgex.lock")));
 
   // A folder with other files gets a library inside it; a library or an empty folder is used as it is.
   const busy = join(dir, "Documents");

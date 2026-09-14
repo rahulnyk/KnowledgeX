@@ -70,6 +70,7 @@ function bundleRoot(values: { bundle?: string; notebook?: string }): string {
   if (values.bundle) {
     const root = kb.expandHome(values.bundle);
     if (!existsSync(root)) throw new kb.KxError(`Bundle folder not found: ${root}`);
+    if (kb.isLibrary(root)) throw new kb.KxError(`${root} is a library of notebooks, not a bundle. Use --notebook NAME instead.`);
     return root;
   }
   const home = library();

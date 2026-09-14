@@ -57,7 +57,11 @@ function describeNote(root: string, note: kb.Note, successors?: Map<string, stri
 
 /** A server for a library. `notebook` locks it to that one notebook. */
 export function createServer(library: string, user: string, notebook?: string): McpServer {
-  kb.openLibrary(library);
+  try {
+    kb.openLibrary(library); // create the folder on first run
+  } catch (error) {
+    if (!(error instanceof kb.KxError)) throw error; // reported on each tool call instead of stopping the server
+  }
   // Read on every call, so a notebook copied into the library shows up without a restart.
   const notebooks = (): string[] => {
     const all = kb.openLibrary(library);

@@ -204,11 +204,12 @@ Documents/KnowledgeX/           library (the folder chosen at install)
 
 **Trust doesn't travel with copies.** A copied notebook arrives with its confirmations. Under §4.4 those would let someone else's Decisions and Playbooks drive actions for a user who never reviewed them. The rule is simple: by default, don't trust a copy; ask.
 
-- **Only confirmations made in this library count.** `.knowledgex.json` records every confirmation made in the library. A `verified` entry in a note counts toward the trust tier only if it is recorded there. This applies to every notebook, whether it was received, replaced, or copied back in.
+- **Only confirmations made in this library count.** `.knowledgex.json` records every confirmation made in the library. A `verified` entry in a note counts toward the trust tier only if it is recorded there. This applies to every notebook, whether it was received, replaced, or copied back in: a copy's confirmations never match the checks recorded here.
 - **Confirmations that came with a copy are kept and shown** ("confirmed by human:alex in another copy"), but the note reads as unverified until someone confirms it here.
 - **Not by name.** `KX_USER` is optional, and everyone who leaves it empty is `human:user`, so names can't tell one person's copy from another's.
 - **Not by date.** An updated copy carries confirmations dated after the first copy arrived, and dates can be forged. A record kept outside the notebook has neither problem.
-- **Fails safe.** Losing `.knowledgex.json`, or moving a notebook out and back in, means its notes need confirming again. Nothing becomes trusted by accident.
+- **Fails safe.** Losing `.knowledgex.json` means notes need confirming again. Nothing becomes trusted by accident.
+- **Records are kept when a notebook goes missing.** A notebook can be briefly unreadable, for example while iCloud or git restores it, and its confirmations shouldn't be lost when it comes back.
 - **The library also records which notebooks it received**, so `list_notebooks` can say where a notebook came from.
 - **A bundle used directly, outside a library** (`kx … --bundle FOLDER`), has no record, so its confirmations count as they always have.
 
@@ -225,7 +226,9 @@ Documents/KnowledgeX/           library (the folder chosen at install)
 **Migration and startup.**
 
 - **A v0.2 notes folder is itself a bundle.** On first start its notes move into `general/`, the move is logged, and its existing confirmations are recorded as made in this library, since the notes are the user's own.
-- **The chosen folder is used as the library** if it is empty, already a library, or a v0.2 bundle. A folder holding anything else gets a `KnowledgeX` library inside it, as today.
+- **The chosen folder is used as the library** if it is empty, already a library, or a v0.2 bundle. If it is a notebook inside a library, that library is used. A folder holding anything else gets a `KnowledgeX` library inside it, as today.
+- **Only one process migrates.** Apps such as Claude Desktop start several server processes at once. A `.knowledgex.lock` file lets one move the notes while the others wait; a lock left behind by a crash expires after a minute.
+- **A library is never treated as a bundle.** `--bundle` refuses a library folder, and a library whose `index.md` gained `okf_version` by mistake is not migrated again.
 - **`kx init FOLDER`** creates a library with a `general` notebook.
 
 **Alternatives rejected.**
@@ -269,7 +272,7 @@ We found nothing that decides *what is worth remembering* from conversations, an
 | **M1: core** | Agent guides, `kx` command line (init, guide, new, touch, verify, relate, search, check, review, index, install-skill), tests, README, walkthrough | ✅ v0.1 (Python), ported to TypeScript in v0.2 |
 | **M2: judgment evals** | 20 fictional conversations with answer keys, and an agent-agnostic runner that scores precision, recall, staying quiet, transient leaks, action and type, and detail completeness ([evals/](../evals/)). Next: use the results to tune the guides. | ✅ Built |
 | **M3: MCP server and one-click extension** | Eight MCP tools with the key rules built in; a Claude Desktop extension with a folder picker and zero-configuration defaults; plain-language walkthrough for non-technical users | ✅ v0.2 |
-| **M4: notebooks** | A library of notebooks, each an OKF bundle: add one by copying its folder in, trust doesn't travel with copies, `list_notebooks`, `KX_NOTEBOOK`, `kx add`, migration of v0.2 folders (§4.11) | ✅ Built, not yet released |
+| **M4: notebooks** | A library of notebooks, each an OKF bundle: add one by copying its folder in, trust doesn't travel with copies, `list_notebooks`, `KX_NOTEBOOK`, `kx add`, migration of v0.2 folders (§4.11) | ✅ v0.3 |
 | **M5: tool connectors** | Notion and Confluence (one-way publish first), Evernote and OneNote import and export | Planned |
 
 ### Phase 2: adopt into existing knowledge

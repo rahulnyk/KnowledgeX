@@ -1,12 +1,12 @@
 // Core operations on a KnowledgeX library: a folder of notebooks, each a flat OKF v0.2 bundle of markdown notes.
 import { createHash } from "node:crypto";
-import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse, stringify } from "yaml";
 
-export const VERSION = "0.2.0";
+export const VERSION = "0.3.0";
 export const OKF_VERSION = "0.2";
 export const RESERVED = new Set(["index.md", "log.md"]);
 export const STATUSES = ["draft", "stable", "deprecated"] as const;
@@ -620,6 +620,7 @@ export function relateNotes(root: string, source: Note, relation: Relation, targ
 
 export const DEFAULT_NOTEBOOK = "general";
 const STATE_FILE = ".knowledgex.json";
+const LOCK_FILE = ".knowledgex.lock";
 const NOTEBOOK_NAME = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 type NotebookRecord = { received?: string; confirmed?: Record<string, string[]> };
 type LibraryState = { notebooks: Record<string, NotebookRecord> };
@@ -654,8 +655,13 @@ export function isLibrary(dir: string): boolean {
   return found.size > 0 && readdirSync(dir).every((name) => name.startsWith(".") || name === "index.md" || found.has(name));
 }
 
-/** The library for a chosen folder: the folder itself if it is empty, a library, or a v0.2 bundle; otherwise a KnowledgeX folder inside it. */
+/**
+ * The library for a chosen folder: the library a chosen notebook belongs to; the folder itself if it is empty,
+ * a library, or a v0.2 bundle; otherwise a KnowledgeX folder inside it.
+ */
 export function libraryFor(folder: string): string {
+  const parent = dirname(resolve(folder));
+  if (isBundle(folder) && existsSync(join(parent, STATE_FILE))) return parent;
   const busy = existsSync(folder) && !isBundle(folder) && !isLibrary(folder) && readdirSync(folder).some((name) => !name.startsWith("."));
   return busy ? join(folder, "KnowledgeX") : folder;
 }
@@ -666,10 +672,52 @@ export function libraryFor(folder: string): string {
  */
 export function openLibrary(library: string): string[] {
   mkdirSync(library, { recursive: true });
+  if (migrating(library)) return notebooks(library);
+  if (isV02Bundle(library) && !migrate(library)) return notebooks(library);
   const state = readState(library);
   const before = JSON.stringify(state);
   const stamp = iso(now());
-  if (isBundle(library)) {
+  let names = notebooks(library);
+  if (!names.length) {
+    state.notebooks[DEFAULT_NOTEBOOK] = {};
+    ensureBundle(join(library, DEFAULT_NOTEBOOK));
+    names = [DEFAULT_NOTEBOOK];
+  }
+  // Records of notebooks that are missing are kept: a notebook may be only briefly unreadable, such as while a sync
+  // client restores it. Keeping them is safe, because a copy's confirmations never match checks recorded here.
+  for (const name of names) state.notebooks[name] ??= { received: stamp };
+  if (JSON.stringify(state) !== before) writeState(library, state);
+  writeLibraryIndex(library);
+  return names;
+}
+
+/** A folder that holds notes directly, as v0.2 did, rather than an already-started library. */
+function isV02Bundle(folder: string): boolean {
+  return isBundle(folder) && !existsSync(join(folder, STATE_FILE)) && !notebooks(folder).length;
+}
+
+/** True while another process is moving a v0.2 folder into `general`. A lock over a minute old is left from a crash. */
+function migrating(library: string): boolean {
+  const lock = join(library, LOCK_FILE);
+  try {
+    if (Date.now() - statSync(lock).mtimeMs < 60_000) return true;
+    rmSync(lock, { force: true });
+  } catch {
+    // no lock
+  }
+  return false;
+}
+
+/** Move a v0.2 folder's notes into `general`, keeping their confirmations. False if another process is doing it. */
+function migrate(library: string): boolean {
+  const lock = join(library, LOCK_FILE);
+  try {
+    writeFileSync(lock, "", { flag: "wx" }); // several app processes can start at once; only one migrates
+  } catch {
+    return false;
+  }
+  try {
+    if (!isV02Bundle(library)) return true; // finished by another process just before the lock was taken
     const target = join(library, DEFAULT_NOTEBOOK);
     if (existsSync(target)) throw new KxError(`Can't turn ${library} into a library of notebooks: it already has a ${DEFAULT_NOTEBOOK} folder.`);
     mkdirSync(target);
@@ -683,20 +731,11 @@ export function openLibrary(library: string): string[] {
       const checks = validVerifications(note.meta).map(checkKey);
       if (checks.length) confirmed[rel(note.path, target)] = checks;
     }
-    state.notebooks[DEFAULT_NOTEBOOK] = { confirmed };
+    writeState(library, { notebooks: { [DEFAULT_NOTEBOOK]: { confirmed } } });
+    return true;
+  } finally {
+    rmSync(lock, { force: true });
   }
-  let names = notebooks(library);
-  if (!names.length) {
-    state.notebooks[DEFAULT_NOTEBOOK] = {};
-    ensureBundle(join(library, DEFAULT_NOTEBOOK));
-    names = [DEFAULT_NOTEBOOK];
-  }
-  for (const name of names) state.notebooks[name] ??= { received: stamp };
-  // Forget notebooks that are gone, so a folder added later under the same name starts with no confirmations.
-  for (const name of Object.keys(state.notebooks)) if (!names.includes(name)) delete state.notebooks[name];
-  if (JSON.stringify(state) !== before) writeState(library, state);
-  writeLibraryIndex(library);
-  return names;
 }
 
 /** Start a new, empty notebook in a library. */
@@ -719,6 +758,9 @@ export function addNotebook(library: string, from: string, name?: string): strin
   if (existsSync(join(library, target))) throw new KxError(`There is already a notebook or folder named ${target}. Choose another name.`);
   openLibrary(library);
   cpSync(source, join(library, target), { recursive: true });
+  const state = readState(library);
+  state.notebooks[target] = { received: iso(now()) }; // a fresh record, even if the library once had a notebook by this name
+  writeState(library, state);
   openLibrary(library);
   return target;
 }
