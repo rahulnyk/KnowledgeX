@@ -224,8 +224,8 @@ export function createServer(root: string, user: string): McpServer {
 }
 
 export async function startServer(): Promise<void> {
-  // An optional setting left empty may arrive as an unfilled "${user_config...}" placeholder.
-  for (const key of ["KX_BUNDLE", "KX_USER"]) if (/^\$\{.*\}$/.test(process.env[key] ?? "")) delete process.env[key];
+  // Claude Desktop may pass a setting with its placeholders unfilled, such as "${user_config.notes_folder}" or "${DOCUMENTS}/KnowledgeX".
+  for (const key of ["KX_BUNDLE", "KX_USER"]) if (process.env[key]?.includes("${")) delete process.env[key];
   let root = kb.configuredBundle() ?? join(homedir(), "Documents", "KnowledgeX");
   // If the chosen folder already holds other files, keep notes in a KnowledgeX folder inside it instead of mixing them in.
   if (existsSync(root) && !kb.isBundle(root) && readdirSync(root).some((name) => !name.startsWith("."))) root = join(root, "KnowledgeX");

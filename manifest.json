@@ -44,8 +44,7 @@
     "notes_folder": {
       "type": "directory",
       "title": "Notes folder",
-      "description": "Where your notes are kept. The folder is created if it doesn't exist. If you pick a folder that already has other files, notes go in a KnowledgeX folder inside it.",
-      "default": "${DOCUMENTS}/KnowledgeX",
+      "description": "Where your notes are kept. Leave empty to use a KnowledgeX folder in your Documents. The folder is created if it doesn't exist. If you pick a folder that already has other files, notes go in a KnowledgeX folder inside it.",
       "required": false
     },
     "your_name": {
