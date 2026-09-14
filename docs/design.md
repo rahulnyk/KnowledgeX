@@ -184,7 +184,7 @@ The spec doesn't say how a consumer should treat a bundle nested inside another.
 ```
 Documents/KnowledgeX/           library (the folder chosen at install)
   index.md                      generated: one entry per notebook
-  .knowledgex.json              which notebooks this library created, and when it received the others
+  .knowledgex.json              which notebooks this library created or received, and confirmations made here
   general/                      the default notebook
     index.md  log.md  <note>.md …
   acme-case/
@@ -204,11 +204,12 @@ Documents/KnowledgeX/           library (the folder chosen at install)
 
 **Received notebooks start unconfirmed.** A notebook someone sends arrives with their confirmations. Under §4.4 those would let their Decisions and Playbooks drive actions for the recipient, who never reviewed them. So:
 
-- `.knowledgex.json` records each notebook the library created, and the moment it first saw any other notebook (its **received** time).
-- In a received notebook, a confirmation counts toward the trust tier only if it is dated at or after the received time, and not in the future. Earlier confirmations are kept and shown ("confirmed by human:alex before you received it"), but the note reads as unverified until someone confirms it in this library.
-- This doesn't compare names. `KX_USER` is optional, and everyone who leaves it empty is `human:user`, so names can't tell the sender from the recipient. Time of arrival can.
-- Losing `.knowledgex.json` makes every notebook look received. That fails safe: the user is asked to confirm again, and nothing becomes trusted by accident.
-- The threat model is honest sharing. A sender who forges future-dated confirmations is only rejected until that date arrives; notes remain information, never instructions (§7), whatever their trust tier.
+- `.knowledgex.json` records which notebooks the library created, which it **received** (any notebook it finds that it didn't create), and every confirmation made in this library for a note in a received notebook.
+- In a received notebook, only confirmations recorded in `.knowledgex.json` count toward the trust tier. The confirmations that arrived with the notebook are kept and shown ("confirmed by human:alex before it reached this library"), but the note reads as unverified until someone confirms it here.
+- **Not by name.** `KX_USER` is optional, and everyone who leaves it empty is `human:user`, so names can't tell the sender from the recipient.
+- **Not by date.** If the sender later sends an updated copy, its new confirmations are dated after the first copy arrived, and dates can be forged. A record kept outside the notebook has neither problem.
+- **Losing `.knowledgex.json` makes every notebook look received.** That fails safe: the user is asked to confirm again, and nothing becomes trusted by accident.
+- **Limitation:** if someone else's folder replaces a notebook this library created, under the same name, the library still treats it as its own. `kx add` refuses names already taken for this reason.
 
 **Choosing a notebook.**
 
@@ -300,7 +301,7 @@ Help people bring notes they already have into a bundle:
 | **OKF is pre-1.0 and may change** | Declare `okf_version`; keep extensions to four keys; follow the spec closely |
 | **Sync conflicts with API-based tools** | Start with one-way publishing |
 | **Non-technical users can't judge what the AI saved** | Propose-first in plain language; confirmations shown in every answer; decisions immutable in code |
-| **A received notebook's confirmations drive actions for someone who never reviewed it** | Confirmations dated before the notebook arrived don't count (§4.11) |
+| **A received notebook's confirmations drive actions for someone who never reviewed it** | In a received notebook, only confirmations made in this library count (§4.11) |
 | **Memory poisoning via note content** | Notes are information, never instructions; only human-reviewed guidance drives actions |
 
 ---
