@@ -217,7 +217,7 @@ Documents/KnowledgeX/           library (the folder chosen at install)
 
 - **Notes are addressed as `notebook/file`**, for example `acme-case/client-preferences.md`, so `read_note`, `update_note`, `confirm_note`, and `link_notes` need no new parameter. `link_notes` refuses notes in different notebooks.
 - **`search_notes`** searches every notebook by default and labels each result with its notebook. An optional `notebook` narrows it.
-- **`save_note`** takes a `notebook`, defaulting to `general`. It creates a notebook only when `create_notebook` is set, so a typo fails instead of silently starting a new notebook. As with notes, the agent proposes a new notebook before creating it.
+- **`save_note`** takes a `notebook`. With only one notebook it defaults to that one; with more than one, a notebook is required, so a note never lands in `general` by accident. The agent names the notebook in its proposal and asks the user unless it is certain. The same applies to `kx new`, which needs `--notebook` when there are several. `save_note` creates a notebook only when `create_notebook` is set, so a typo fails instead of silently starting a new notebook. As with notes, the agent proposes a new notebook before creating it.
 - **A new `list_notebooks` tool** shows each notebook with its note count, main types, and whether it was received. That makes nine tools.
 - **Per-conversation choice comes from instructions**, not settings: a Claude Desktop Project's instructions ("Use the KnowledgeX notebook `acme-case`"), or `AGENTS.md`/`CLAUDE.md` in a repository.
 - **`KX_NOTEBOOK`** locks a connection to one notebook, for a hard boundary. The other notebooks are invisible to that connection.

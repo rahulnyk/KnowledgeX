@@ -49,7 +49,7 @@ The folder is created on first use. If it already contains other files and isn't
 | `read_guide` | Read the rules: what to keep, how to write, how to look things up, how to maintain notes |
 | `search_notes` | Find notes, with whether each was confirmed and whether it's out of date |
 | `read_note` | Read one note in full, with its sources and history of checks |
-| `save_note` | Save a new note the user approved |
+| `save_note` | Save a new note the user approved; names the notebook when there is more than one |
 | `update_note` | Change a note the user approved changing (decisions can't be edited) |
 | `confirm_note` | Record that a note was checked, by the user or against its sources |
 | `link_notes` | Mark a note as replacing an older one, or as conflicting with another |
@@ -125,7 +125,7 @@ Durable knowledge is kept in KnowledgeX notebooks, managed with the `kx` command
 |---|---|
 | `kx init FOLDER` | Create a notes folder (a library with a `general` notebook) and make it the default |
 | `kx guide [overview\|what\|write\|retrieve\|maintain\|all]` | Print the agent guide (default: `overview`) |
-| `kx new TYPE "Title" --description TEXT --by ID [--tags a,b] [--status draft] [--source id=URL]` | Create a note from its type's template and print its path; repeat `--source` for several sources |
+| `kx new TYPE "Title" --description TEXT --by ID [--tags a,b] [--status draft] [--source id=URL]` | Create a note from its type's template and print its path; repeat `--source` for several sources. Needs `--notebook` when there is more than one notebook |
 | `kx touch FILE --by ID [--message TEXT]` | Record that a note's content changed |
 | `kx verify FILE --by ID` | Record that a note was checked; restarts its expiry window |
 | `kx relate FILE supersedes FILE --by ID` | Mark a note as replacing another; the older note is retired |

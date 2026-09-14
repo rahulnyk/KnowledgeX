@@ -223,6 +223,8 @@ test("MCP server", async (t) => {
   assert.match((await call("search_notes", { query: "acme" })).text, /acme-case\/dana-lee\.md/);
   assert.ok(!(await call("search_notes", { query: "acme", notebook: "general" })).text.includes("dana-lee"));
   assert.match((await call("list_notebooks")).text, /acme-case: 1 note \(mostly Person\)\ngeneral: /);
+  result = await call("save_note", { type: "Idea", title: "Unsorted", description: "d", body: "## The idea\n- x\n" });
+  assert.ok(result.isError && /2 notebooks \(acme-case, general\)/.test(result.text) && /ask the user/.test(result.text), "with several notebooks, one must be named");
   result = await call("link_notes", { file: "acme-case/dana-lee.md", relation: "contradicts", target: "general/writing-style.md" });
   assert.ok(result.isError && /different notebooks/.test(result.text));
 
@@ -317,4 +319,5 @@ test("notebooks", (t) => {
   assert.equal(kb.libraryFor(join(dir, "new")), join(dir, "new"));
   assert.equal(kx("notebooks", "create", "Bad Name").code, 1);
   assert.equal(kx("new", "Idea", "x", "--description", "d", "--by", AGENT, "--notebook", "missing").code, 1);
+  assert.match(kx("new", "Idea", "x", "--description", "d", "--by", AGENT).out, /Say which one with --notebook/);
 });

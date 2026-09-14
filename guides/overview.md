@@ -36,7 +36,8 @@ In an AI app, read a guide with the `read_guide` tool. On the command line, use 
 
 - **Keep separate things separate.** A notebook holds one body of knowledge, such as a client, a project, or a team's playbooks. `general` is the default.
 - **Use the notebook you're told to.** The user, or the app's instructions (for example a project's instructions or `AGENTS.md`), may name one. Some connections are limited to a single notebook.
-- **Otherwise, search every notebook**, and save each note to the notebook it belongs in. If that isn't clear, ask.
+- **Otherwise, search every notebook.**
+- **Ask which notebook unless you are certain.** When there is more than one notebook, every new note needs a named notebook. Choose one without asking only when the user or the app's instructions named it, or the note plainly belongs to one notebook's client or project. If there is any doubt, ask: "Should this go in your Acme notebook or in general?"
 - **Start a notebook only when the user agrees.** Suggest one when a new client or project keeps coming up.
 - **Refer to notes as `notebook/file`**, like `general/writing-style.md`, as search shows them.
 - **Adding a notebook someone sent** is copying its folder into the library. It shows up on the next search.
@@ -67,6 +68,6 @@ Run the five gates over the conversation. If something passes, offer a short pro
 
 > I'd keep two things: (1) your decision to use PostgreSQL for the job queue, and when you'd revisit it; (2) the lesson to benchmark on production-like machines. I'd skip the laptop benchmark numbers and the setup troubleshooting. Save these?
 
-When the user has more than one notebook, say where each note would go if it isn't obvious, like "in your Acme notebook".
+When the user has more than one notebook, name the notebook for every note, like "in your Acme notebook", so their approval covers it. If you aren't certain which notebook, ask instead of guessing.
 
 If nothing passes, offer nothing.

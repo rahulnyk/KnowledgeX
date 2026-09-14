@@ -39,7 +39,8 @@ Usage: kx <command> [options]
   init FOLDER                                   create a library of notebooks and make it the default
   guide [overview|what|write|retrieve|maintain|all]
                                                 print the agent guide
-  new TYPE "Title" --description TEXT --by ID   create a note from its type's template
+  new TYPE "Title" --description TEXT --by ID   create a note from its type's template (--notebook is required
+                                                when there is more than one notebook)
       [--tags a,b] [--status draft] [--source id=URL ...]
   touch FILE --by ID [--message TEXT]           record that a note's content changed
   verify FILE --by ID                           record that a note's content was checked
@@ -65,8 +66,8 @@ function library(): string {
   return kb.libraryFor(configured);
 }
 
-/** The folder a command works on: --bundle as given, or a notebook in the library. */
-function bundleRoot(values: { bundle?: string; notebook?: string }): string {
+/** The folder a command works on: --bundle as given, or a notebook in the library. `writing`: a new note needs a named notebook when there are several. */
+function bundleRoot(values: { bundle?: string; notebook?: string }, writing = false): string {
   if (values.bundle) {
     const root = kb.expandHome(values.bundle);
     if (!existsSync(root)) throw new kb.KxError(`Bundle folder not found: ${root}`);
@@ -75,6 +76,9 @@ function bundleRoot(values: { bundle?: string; notebook?: string }): string {
   }
   const home = library();
   const names = kb.openLibrary(home);
+  if (writing && !values.notebook && !process.env.KX_NOTEBOOK && names.length > 1) {
+    throw new kb.KxError(`There are ${names.length} notebooks (${names.join(", ")}). Say which one with --notebook NAME.`);
+  }
   const name = values.notebook || process.env.KX_NOTEBOOK || kb.DEFAULT_NOTEBOOK;
   if (!names.includes(name)) throw new kb.KxError(`No notebook named ${name}. Notebooks: ${names.join(", ")}`);
   return join(home, name);
@@ -141,7 +145,7 @@ export function main(argv: string[], print: (text: string) => void = console.log
       return 0;
     }
     case "new": {
-      const root = bundleRoot(values);
+      const root = bundleRoot(values, true);
       const type = need(args[0], "TYPE");
       const title = need(args[1], '"Title"');
       if (values.status && values.status !== "draft" && values.status !== "stable") throw new kb.KxError("--status must be draft or stable");
