@@ -6,7 +6,7 @@ import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse, stringify } from "yaml";
 
-export const VERSION = "0.3.0";
+export const VERSION = "0.3.1";
 export const OKF_VERSION = "0.2";
 export const RESERVED = new Set(["index.md", "log.md"]);
 export const STATUSES = ["draft", "stable", "deprecated"] as const;
@@ -79,7 +79,9 @@ export function readNote(path: string): Note {
 
 export function writeNote(note: Note): void {
   const front = stringify(note.meta, { lineWidth: 0 });
-  writeFileSync(note.path, `---\n${front}---\n${note.body}`, "utf8");
+  const text = `---\n${front}---\n${note.body}`;
+  writeFileSync(note.path, text, "utf8");
+  recordContent(note.path, text);
 }
 
 /** The notes in a bundle. Bundles are flat, so only the top level is read. */
@@ -178,7 +180,7 @@ export function freshness(meta: Meta, moment: Date = now()): string {
 
 const CODE = /```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]*`/g;
 const MD_LINK = /\[[^\]]*\]\(\s*(?:<([^>]*)>|([^)\s]+))[^)]*\)/g;
-const WIKILINK = /\[\[[^\]\n]+\]\]/;
+const WIKILINK = /!?\[\[([^\]\n]+)\]\]/g; // Obsidian's link form: [[note]], [[note|Title]], [[note#heading]]
 const FOOTNOTE_REF = /\[\^([^\]\s]+)\](?!:)/g;
 const FOOTNOTE_DEF = /^\[\^([^\]\s]+)\]:/gm;
 const SCHEME = /^[a-zA-Z][a-zA-Z0-9+.-]*:/;
@@ -195,16 +197,31 @@ const safeDecode = (text: string) => {
 };
 export const encodePath = (path: string): string => path.split("/").map(encodeURIComponent).join("/");
 
-/** Bundle-relative paths that the note's markdown links point at. */
+/**
+ * Bundle-relative paths the note's links point at. Markdown links are what KnowledgeX writes;
+ * `[[wikilinks]]` are read too, so links made in an editor such as Obsidian still count.
+ */
 export function localLinks(note: Note, root: string): string[] {
   const links: string[] = [];
-  for (const match of prose(note.body).matchAll(MD_LINK)) {
+  const text = prose(note.body);
+  for (const match of text.matchAll(MD_LINK)) {
     const target = safeDecode((match[1] ?? match[2] ?? "").split("#")[0]);
     if (!target || SCHEME.test(target)) continue;
     const base = target.startsWith("/") ? root : dirname(note.path);
     links.push(rel(join(base, target.replace(/^\/+/, "")), root));
   }
+  for (const match of text.matchAll(WIKILINK)) {
+    const target = wikiTarget(match[1]);
+    if (target) links.push(rel(join(root, target), root)); // a wikilink names a note in the same notebook
+  }
   return links;
+}
+
+/** The file a wikilink points at: the part before `|` or `#`, with `.md` added when it has no extension. */
+export function wikiTarget(inside: string): string {
+  const name = safeDecode(inside.split("|")[0].split("#")[0].trim()).replace(/^\/+/, "");
+  if (!name || name.split("/").includes("..")) return "";
+  return /\.[a-z0-9]+$/i.test(name) ? name : `${name}.md`;
 }
 
 export function linkTo(from: Note, to: Note): string {
@@ -381,7 +398,8 @@ export function check(root: string): Finding[] {
     }
 
     const text = prose(note.body);
-    if (WIKILINK.test(text)) add("warning", file, "uses [[wikilinks]]; use markdown links like [Title](file.md)");
+    if (text.match(WIKILINK))
+      add("warning", file, "uses [[wikilinks]]; KnowledgeX follows them, but other OKF tools can't. Markdown links like [Title](file.md) are portable");
     const sources = asList(meta.sources);
     if (sources.some((source) => !(isMapping(source) && source.resource)))
       add("warning", file, "each `sources` entry should have a `resource`");
@@ -427,11 +445,14 @@ export function review(root: string, moment: Date = now()): Map<string, string[]
     const local = localChecks(root, note);
     const valid = validVerifications(meta, local);
     const verified = asList(meta.verified);
+    const edited = editedHere(root, note); // the user's own edit: trusted, so it needs no checking
 
     if (active && freshness(meta, moment).startsWith("stale")) push("Stale", `${item}: ${freshness(meta, moment)}`);
-    if (active && local && !valid.length && validVerifications(meta).length) push("Confirmed in another copy, not in this library", item);
-    else if (active && verified.length && !valid.length) push("Edited since last verified", item);
-    if (active && !verified.length) push("Never verified", item);
+    if (active && !edited) {
+      if (local && !valid.length && validVerifications(meta).length) push("Confirmed in another copy, not in this library", item);
+      else if (verified.length && !valid.length) push("Edited since last verified", item);
+      if (!verified.length) push("Never verified", item);
+    }
 
     const checked = valid.map((v) => parseTime(v.at)).filter((t): t is Date => t !== null);
     const baseline = checked.length ? new Date(Math.max(...checked.map((t) => t.getTime()))) : changedAt(meta);
@@ -537,7 +558,7 @@ export function createNote(root: string, input: NewNote): Note {
 
 /** Record a content change. Returns the trust tier the note had before, which the change has now reset. */
 export function touchNote(root: string, note: Note, by: string, message?: string): Trust {
-  const before = trust(note.meta, localChecks(root, note));
+  const before = trustIn(root, note);
   const checks = asList(note.meta.verified).map((v) => (isMapping(v) ? parseTime(v.at) : null)).filter((t): t is Date => t !== null);
   const lastCheck = checks.length ? Math.max(...checks.map((t) => t.getTime())) : 0;
   // Timestamps have one-second resolution: an edit must land strictly after the last check, or the check would still count.
@@ -586,7 +607,7 @@ export function verifyNote(root: string, note: Note, by: string): Trust {
   writeNote(note);
   appendLog(root, "Verification", `[${titleOf(note)}](${encodePath(rel(note.path, root))}) checked by ${by}.`);
   writeIndex(root);
-  return trust(note.meta, localChecks(root, note));
+  return trustIn(root, note);
 }
 
 function ensureLink(root: string, note: Note, other: Note, label: string): void {
@@ -622,7 +643,7 @@ export const DEFAULT_NOTEBOOK = "general";
 const STATE_FILE = ".knowledgex.json";
 const LOCK_FILE = ".knowledgex.lock";
 const NOTEBOOK_NAME = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-type NotebookRecord = { received?: string; confirmed?: Record<string, string[]> };
+type NotebookRecord = { received?: string; confirmed?: Record<string, string[]>; content?: Record<string, string> };
 type LibraryState = { notebooks: Record<string, NotebookRecord> };
 
 function readState(library: string): LibraryState {
@@ -800,6 +821,42 @@ function recordCheck(root: string, note: Note, entry: Record<string, any>): void
   const file = rel(note.path, root);
   record.confirmed = { ...record.confirmed, [file]: [...(record.confirmed?.[file] ?? []), checkKey(entry)] };
   writeState(library, state);
+}
+
+const digest = (text: string): string => createHash("sha256").update(text).digest("hex").slice(0, 16);
+
+/** Remember what KnowledgeX wrote, so a later edit made in another editor can be recognised. */
+function recordContent(notePath: string, text: string): void {
+  const root = dirname(resolve(notePath));
+  const library = dirname(root);
+  if (!existsSync(join(library, STATE_FILE))) return;
+  const state = readState(library);
+  const record = (state.notebooks[basename(root)] ??= {});
+  record.content = { ...record.content, [basename(notePath)]: digest(text) };
+  writeState(library, state);
+}
+
+/**
+ * True if the note's file changed since KnowledgeX last wrote it: someone edited it in another editor.
+ * False for a note KnowledgeX has never written here, such as one that arrived in a copied notebook.
+ */
+export function editedHere(root: string, note: Note): boolean {
+  const library = dirname(resolve(root));
+  const written = readState(library).notebooks[basename(resolve(root))]?.content?.[rel(note.path, root)];
+  if (!written) return false;
+  try {
+    return digest(readFileSync(note.path, "utf8")) !== written;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * A note's trust in this library. An edit the user made in their own editor, such as Obsidian, counts as
+ * their confirmation: they wrote it, so they stand behind it.
+ */
+export function trustIn(root: string, note: Note): Trust {
+  return editedHere(root, note) ? "human-reviewed" : trust(note.meta, localChecks(root, note));
 }
 
 /** A note's id across the library: `notebook/file`. */

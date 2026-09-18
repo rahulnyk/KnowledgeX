@@ -162,3 +162,12 @@ Durable knowledge is kept in KnowledgeX notebooks, managed with the `kx` command
 - **`log.md`:** a dated record of every change.
 
 Each notebook folder is flat and plain text, so it works with any markdown editor, with git, and with other OKF tools.
+
+## Editing notes yourself
+
+Notebooks are made to be opened in a markdown editor. A notes folder inside an Obsidian vault works as a vault folder.
+
+- **An edit you make is trusted.** KnowledgeX remembers a fingerprint of every note it writes, in `.knowledgex.json`. When a note's file no longer matches, it was edited somewhere else, which counts as your own confirmation: you wrote it, so you stand behind it. Anything else with write access to the folder counts the same way, so keep other tools out of it.
+- **Links:** KnowledgeX writes markdown links, which Obsidian renders. It also follows `[[wikilinks]]` you write, so they count as real links, and `kx check` warns only that other OKF tools can't follow them. To have Obsidian write markdown links too: **Settings → Files and links** → turn off **Use [[Wikilinks]]** and set **New link format** to **Relative path to file**.
+- **After editing**, run `kx check` and `kx index`, or ask your AI for a check-up: a changed title or description isn't in `index.md` until the index is rebuilt, and the change isn't in `log.md`.
+- **Renaming** a note in an editor updates links in note bodies, but not `supersedes` and `contradicts` paths in frontmatter; `kx check` reports those. Ask your AI to rename instead: the file name stays, and the old title is kept as an alias.

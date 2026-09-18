@@ -152,7 +152,7 @@ The `kx` command line (`npm install -g knowledgex`) works for scripts and for co
 - **The agent guides** tell the AI what's worth keeping, how to write it, how to look things up, and how to keep notes current. Read them in [`guides/`](guides/).
 - **The MCP server and `kx` command** do the bookkeeping, so notes stay consistent whichever AI writes them.
 
-The notes are ordinary markdown files, so you can also browse them in Obsidian, VS Code, or any markdown editor.
+The notes are ordinary markdown files, so you can also browse them in Obsidian, VS Code, or any markdown editor, and edit them there. A note you edit yourself counts as confirmed by you.
 
 ## Learn more
 

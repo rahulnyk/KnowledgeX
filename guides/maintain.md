@@ -21,6 +21,7 @@ Knowledge rots quietly. Maintenance keeps every notebook true, so that agents ca
 | **Deprecated without a successor** | Either link the replacement as superseding it, or confirm the note was simply retired. |
 | **Open contradictions** | Show both sides to the user. Resolve by superseding the wrong note, or by correcting both. |
 | **Drafts** | Ask whether each draft is now solid (make it `stable`) or should be dropped. |
+| **Notes the user edited themselves** | They don't appear as work: the user's own edit counts as their confirmation. Their titles and descriptions may have moved on, so run the format check and rebuild the index when it reports one out of date. |
 | **Never verified** | Most important first: Decisions, Preferences, Principles, and Playbooks that agents act on. Check them against sources or with the user. |
 
 Also, now and then:

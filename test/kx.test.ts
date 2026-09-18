@@ -86,6 +86,62 @@ test("regressions from code review", (t) => {
   assert.equal(kx("guide", "constructor").code, 1);
 });
 
+test("notes edited in another editor, and wikilinks", (t) => {
+  const library = join(tempDir(t), "notes");
+  const names = kb.openLibrary(library);
+  const root = join(library, names[0]);
+
+  // Wikilinks made in an editor such as Obsidian count as links.
+  kb.createNote(root, { type: "Concept", title: "Retainer", description: "What a retainer is.", body: "## Definition\n- Money held on account.\n", by: AGENT });
+  kb.createNote(root, {
+    type: "Playbook",
+    title: "Client intake",
+    description: "How a new client is taken on.",
+    body: "## Steps\n- Agree the [[retainer|retainer amount]] first.\n- See [[retainer#definition]].\n",
+    by: AGENT,
+  });
+  assert.deepEqual(kb.localLinks(kb.openNote(root, "client-intake.md"), root), ["retainer.md", "retainer.md"]);
+  assert.equal(kb.wikiTarget("retainer|amount"), "retainer.md");
+  assert.equal(kb.wikiTarget("notes/2026.png"), "notes/2026.png");
+  assert.equal(kb.wikiTarget("../outside"), "", "a wikilink can't point outside the notebook");
+  let findings = kb.check(root);
+  assert.ok(findings.some((f) => /wikilinks/.test(f.message)), "portability warning stays");
+  assert.ok(!findings.some((f) => /broken link/.test(f.message)), "a wikilink to a note that exists is not broken");
+
+  // A wikilink satisfies the link a relation needs in the body.
+  kb.createNote(root, { type: "Concept", title: "Old retainer", description: "d", body: "## Definition\n- Old.\n", by: AGENT });
+  const newer = kb.openNote(root, "retainer.md");
+  newer.meta.supersedes = ["old-retainer.md"];
+  newer.body = `${newer.body}\nReplaces [[old-retainer]].\n`;
+  kb.writeNote(newer);
+  assert.ok(!kb.check(root).some((f) => /also needs a link in the body/.test(f.message)));
+
+  // An edit made in another editor counts as the user's own confirmation.
+  const file = join(root, "client-intake.md");
+  assert.equal(kb.trustIn(root, kb.openNote(root, "client-intake.md")), "unverified");
+  writeFileSync(file, `${readFileSync(file, "utf8")}- Confirm the fee by email.\n`);
+  const edited = kb.openNote(root, "client-intake.md");
+  assert.equal(kb.editedHere(root, edited), true);
+  assert.equal(kb.trustIn(root, edited), "human-reviewed");
+  const groups = kb.review(root);
+  assert.ok(!(groups.get("Never verified") ?? []).some((item) => item.startsWith("client-intake.md")), "the user's own edit needs no checking");
+  assert.ok((groups.get("Never verified") ?? []).some((item) => item.startsWith("retainer.md")), "other notes still do");
+
+  // Writing through KnowledgeX puts the note back under the usual rules.
+  kb.updateNote(root, kb.openNote(root, "client-intake.md"), { description: "How a new client is taken on, with fees." }, AGENT);
+  assert.equal(kb.editedHere(root, kb.openNote(root, "client-intake.md")), false);
+  assert.equal(kb.trustIn(root, kb.openNote(root, "client-intake.md")), "unverified");
+
+  // A note in a copied notebook was never written here, so it is not treated as edited by the user.
+  const theirs = join(tempDir(t), "theirs");
+  kb.ensureBundle(theirs);
+  kb.createNote(theirs, { type: "Lesson", title: "Their lesson", description: "d", body: "- x\n", by: AGENT });
+  const added = kb.addNotebook(library, theirs, "from-them");
+  const copied = kb.openNote(join(library, added), "their-lesson.md");
+  assert.equal(kb.editedHere(join(library, added), copied), false);
+  assert.equal(kb.trustIn(join(library, added), copied), "unverified");
+});
+
 test("eval cases are valid", async () => {
   assert.deepEqual(checkCases(loadCases()), []);
   // pnpm passes the `--` from `pnpm run evals -- check` through to the script.

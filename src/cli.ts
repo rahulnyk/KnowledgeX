@@ -203,7 +203,7 @@ export function main(argv: string[], print: (text: string) => void = console.log
         const file = kb.rel(note.path, root);
         const meta = note.meta;
         print(`\n${file}: ${kb.titleOf(note)}`);
-        print(`    ${[meta.type ?? "?", kb.trust(meta, kb.localChecks(root, note)), kb.freshness(meta), meta.status ?? "?"].join(" · ")}`);
+        print(`    ${[meta.type ?? "?", kb.trustIn(root, note), kb.freshness(meta), meta.status ?? "?"].join(" · ")}`);
         if (meta.description) print(`    ${meta.description}`);
         if (successors.has(file)) print(`    superseded by: ${successors.get(file)!.join(", ")}`);
         const contradicts = kb.relationTargets(note, root, "contradicts");

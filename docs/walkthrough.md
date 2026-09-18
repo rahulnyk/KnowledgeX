@@ -117,6 +117,8 @@ Your notes live in **notebooks**. Everything goes in one called **general** unti
 
 > **Tip:** to browse your notes in a friendlier way, open the folder in a free notes app such as [Obsidian](https://obsidian.md) (choose "Open folder as vault").
 
+**Editing notes yourself is fine.** A note you edit counts as confirmed by you, since you wrote it. Afterwards, ask Claude for a check-up now and then, so it can tidy up the list of your notes.
+
 ---
 
 ## 10. Troubleshooting

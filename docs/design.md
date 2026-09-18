@@ -122,7 +122,7 @@ The trade-off: with API-based tools there are two copies, so sync can conflict. 
 
 ### 4.3 The bundle is OKF on disk, with no export step
 
-The bundle is a flat folder with kebab-case file names, relative markdown links (not `[[wikilinks]]`), and OKF's reserved `index.md` and `log.md`. Any OKF consumer can read it as-is. The cost is that some editors (such as Obsidian) show file names rather than titles in their file lists.
+The bundle is a flat folder with kebab-case file names, relative markdown links (never `[[wikilinks]]`, though they are read, §4.12), and OKF's reserved `index.md` and `log.md`. Any OKF consumer can read it as-is. The cost is that some editors (such as Obsidian) show file names rather than titles in their file lists.
 
 ### 4.4 A verification counts only if it came after the last content change
 
@@ -184,7 +184,7 @@ The spec doesn't say how a consumer should treat a bundle nested inside another.
 ```
 Documents/KnowledgeX/           library (the folder chosen at install)
   index.md                      generated: one entry per notebook
-  .knowledgex.json              confirmations made in this library, and which notebooks it received
+  .knowledgex.json              confirmations made here, fingerprints of what was written, notebooks received
   general/                      the default notebook
     index.md  log.md  <note>.md …
   acme-case/
@@ -213,6 +213,8 @@ Documents/KnowledgeX/           library (the folder chosen at install)
 - **The library also records which notebooks it received**, so `list_notebooks` can say where a notebook came from.
 - **A bundle used directly, outside a library** (`kx … --bundle FOLDER`), has no record, so its confirmations count as they always have.
 
+**The user's own editor.** A notebook is meant to be opened in a markdown editor, so what people do there has to be handled rather than merely tolerated (§4.12).
+
 **Choosing a notebook.**
 
 - **Notes are addressed as `notebook/file`**, for example `acme-case/client-preferences.md`, so `read_note`, `update_note`, `confirm_note`, and `link_notes` need no new parameter. `link_notes` refuses notes in different notebooks.
@@ -236,6 +238,20 @@ Documents/KnowledgeX/           library (the folder chosen at install)
 - **One hierarchical bundle, with subfolders as sections.** A received bundle would stop being standalone: its `/` links and root-relative paths would resolve against the wrong root, and one section couldn't be sent on its own.
 - **Merging received notes into an existing notebook.** File-name clashes, duplicates, and lost provenance, for no gain over keeping the notebook whole.
 - **Cross-notebook `supersedes` and `contradicts`.** They would make notebooks depend on each other and break when one is sent alone. Deferred until there is a need.
+
+### 4.12 An edit the user makes is their confirmation, and wikilinks are read
+
+Notebooks are plain markdown, so people open them in editors such as Obsidian. Two things follow.
+
+**Hand edits count as confirmed by the user.** Editing a note outside KnowledgeX leaves `generated.at` untouched, so §4.4 can't see the change: the note keeps a confirmation that no longer covers its content. Rather than distrust such notes, KnowledgeX trusts them, on the user's reasoning that what they wrote themselves they stand behind.
+
+- The library records a fingerprint of every note KnowledgeX writes, next to the confirmations in `.knowledgex.json`. A note whose file no longer matches was edited elsewhere, and reads as human-reviewed.
+- A fingerprint is compared, not a timestamp, so copying, syncing, or a git checkout doesn't look like an edit. A note KnowledgeX never wrote here, such as one in a received notebook, has no fingerprint, so the copy rule (§4.11) still applies.
+- Saving through KnowledgeX again puts the note back under the usual rules.
+- **The limit:** anything with write access to the folder counts as the user, including another agent. That is the same trust boundary as the notes folder itself, and §4.9 keeps the server inside it.
+- Maintenance leaves such notes alone, but their `index.md` entry may lag until the index is rebuilt.
+
+**Wikilinks are read, never written.** KnowledgeX writes markdown links, which every OKF consumer and every markdown editor can follow. It also resolves `[[note]]`, `[[note|Title]]`, and `[[note#heading]]` inside a notebook, so a link the user makes in Obsidian counts as a link and can satisfy a relation. `kx check` keeps a portability warning, because other OKF tools can't follow them. Writing wikilinks would make notes unreadable outside Obsidian-like tools, which principle 4 rules out.
 
 ---
 
@@ -301,7 +317,7 @@ Help people bring notes they already have into a bundle:
 | **Agents write too little** | Trigger list in the guide; recall in the evals |
 | **Evals reward keywords, not meaning** | Every case has a reference answer that must pass and a transcript dump that must fail; failures are read by hand before the guide is changed |
 | **People rubber-stamp verification** | Small, specific review items; per-fact footnotes so a single fact can be re-checked |
-| **Hand edits skip metadata** | The trust rule (§4.4); `kx review` lists notes edited since their last check |
+| **Hand edits skip metadata** | Fingerprints spot them, and they count as the user's own confirmation (§4.12); `kx review` lists notes edited since their last check |
 | **OKF is pre-1.0 and may change** | Declare `okf_version`; keep extensions to four keys; follow the spec closely |
 | **Sync conflicts with API-based tools** | Start with one-way publishing |
 | **Non-technical users can't judge what the AI saved** | Propose-first in plain language; confirmations shown in every answer; decisions immutable in code |

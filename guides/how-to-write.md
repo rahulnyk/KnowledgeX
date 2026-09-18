@@ -10,7 +10,7 @@ Notes follow the [Open Knowledge Format (OKF) v0.2](https://github.com/GoogleClo
 - **`log.md`** is a dated changelog, newest first. `kx` commands add to it.
 - **Every other `.md` file is a note.**
 - **File names are kebab-case**, like `use-postgresql-as-the-job-queue.md`. The display name lives in `title`. Creating a note chooses the file name.
-- **Link with standard relative markdown links**, like `[Job queue decision](use-postgresql-as-the-job-queue.md)`. Don't use `[[wikilinks]]`; OKF doesn't define them and other tools can't follow them.
+- **Always write standard relative markdown links**, like `[Job queue decision](use-postgresql-as-the-job-queue.md)`. Never write `[[wikilinks]]`: OKF doesn't define them, so other tools can't follow them. KnowledgeX does *read* wikilinks, so links the user makes in an editor such as Obsidian still count, and a relation can rely on one.
 - **Links and relationships stay inside a notebook**, so a notebook still works when it is copied on its own.
 
 ## Note types
