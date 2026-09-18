@@ -10,6 +10,14 @@ Your notes are plain text files in a folder on your computer.
 
 > **Status:** early (v0.3). Things may still change.
 
+## How it works, in pictures
+
+<p align="center">
+  <a href="https://raw.githubusercontent.com/rahulnyk/KnowledgeX/main/assets/poster-1-why.png"><img src="https://raw.githubusercontent.com/rahulnyk/KnowledgeX/main/assets/readme/poster-1-why.png" width="32%" alt="Why KnowledgeX"></a>
+  <a href="https://raw.githubusercontent.com/rahulnyk/KnowledgeX/main/assets/poster-2-setup.png"><img src="https://raw.githubusercontent.com/rahulnyk/KnowledgeX/main/assets/readme/poster-2-setup.png" width="32%" alt="Setting it up"></a>
+  <a href="https://raw.githubusercontent.com/rahulnyk/KnowledgeX/main/assets/poster-3-what-to-expect.png"><img src="https://raw.githubusercontent.com/rahulnyk/KnowledgeX/main/assets/readme/poster-3-what-to-expect.png" width="32%" alt="What to expect"></a>
+</p>
+
 ## Get started
 
 KnowledgeX works with any AI app that can run a local MCP server (MCP is the standard way to give an AI new tools). Find your app below. After setup, talk to your AI as usual; see [what using it looks like](#what-using-it-looks-like).
@@ -50,20 +58,20 @@ Google has announced custom MCP support for Gemini Spark in the Gemini app for M
 
 **Windsurf, Cursor, and Gemini CLI.** Add KnowledgeX to the app's MCP settings file:
 
-| App | Settings file |
-|---|---|
-| Windsurf | `~/.codeium/windsurf/mcp_config.json` (also opens from the **MCPs** icon in the Cascade panel) |
-| Cursor | `~/.cursor/mcp.json` |
-| Gemini CLI | `~/.gemini/settings.json` |
+| App        | Settings file                                                                                  |
+| ---------- | ---------------------------------------------------------------------------------------------- |
+| Windsurf   | `~/.codeium/windsurf/mcp_config.json` (also opens from the **MCPs** icon in the Cascade panel) |
+| Cursor     | `~/.cursor/mcp.json`                                                                           |
+| Gemini CLI | `~/.gemini/settings.json`                                                                      |
 
 ```json
 {
-  "mcpServers": {
-    "knowledgex": {
-      "command": "npx",
-      "args": ["-y", "knowledgex", "mcp"]
+    "mcpServers": {
+        "knowledgex": {
+            "command": "npx",
+            "args": ["-y", "knowledgex", "mcp"]
+        }
     }
-  }
 }
 ```
 
@@ -73,13 +81,13 @@ If the file already exists, add the `mcpServers` section to it, or just the `kno
 
 ```json
 {
-  "mcp_servers": {
-    "knowledgex": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "knowledgex", "mcp"]
+    "mcp_servers": {
+        "knowledgex": {
+            "type": "stdio",
+            "command": "npx",
+            "args": ["-y", "knowledgex", "mcp"]
+        }
     }
-  }
 }
 ```
 
@@ -87,13 +95,13 @@ If the file already exists, add the `mcpServers` section to it, or just the `kno
 
 ```json
 {
-  "servers": {
-    "knowledgex": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "knowledgex", "mcp"]
+    "servers": {
+        "knowledgex": {
+            "type": "stdio",
+            "command": "npx",
+            "args": ["-y", "knowledgex", "mcp"]
+        }
     }
-  }
 }
 ```
 
@@ -119,7 +127,7 @@ Any app that can run a local MCP server can use KnowledgeX with the command `npx
 
 > I'd keep two things: your decision to review liability clauses before payment terms, and why; and that the client prefers updates by email, not calls. I'd skip the draft wording we went back and forth on. Save these?
 
-Say yes, "only the first", or no. If nothing is worth keeping, it won't ask. You can also just say *"remember this"*.
+Say yes, "only the first", or no. If nothing is worth keeping, it won't ask. You can also just say _"remember this"_.
 
 **Asking later.**
 
@@ -131,9 +139,9 @@ Say yes, "only the first", or no. If nothing is worth keeping, it won't ask. You
 
 **Changing your mind.** Tell your AI, and it saves the new decision and marks the old one as replaced. It never silently edits a past decision, so you keep the history.
 
-**A check-up.** Ask *"Do any of my notes need attention?"* Your AI lists notes that may be out of date, conflict with each other, or were never confirmed, and suggests fixes.
+**A check-up.** Ask _"Do any of my notes need attention?"_ Your AI lists notes that may be out of date, conflict with each other, or were never confirmed, and suggests fixes.
 
-**Notebooks.** Keep a client or project in its own notebook: say *"start a notebook for the Acme case."* Everything else goes in the `general` notebook. To share a notebook, send its folder. To add one you received, drop the folder into your notes folder. Notes someone else confirmed start unconfirmed for you, until you confirm them yourself.
+**Notebooks.** Keep a client or project in its own notebook: say _"start a notebook for the Acme case."_ Everything else goes in the `general` notebook. To share a notebook, send its folder. To add one you received, drop the folder into your notes folder. Notes someone else confirmed start unconfirmed for you, until you confirm them yourself.
 
 ## Your notes and your privacy
 
