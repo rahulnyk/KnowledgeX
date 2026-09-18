@@ -3,3 +3,4 @@ dist/
 build/
 *.mcpb
 evals/results/
+.DS_Store
