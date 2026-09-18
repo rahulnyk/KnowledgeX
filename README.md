@@ -12,11 +12,11 @@ Your notes are plain text files in a folder on your computer.
 
 ## How it works, in pictures
 
-<p align="center">
-  <a href="https://raw.githubusercontent.com/rahulnyk/KnowledgeX/main/assets/poster-1-why.png"><img src="https://raw.githubusercontent.com/rahulnyk/KnowledgeX/main/assets/readme/poster-1-why.png" width="32%" alt="Why KnowledgeX"></a>
-  <a href="https://raw.githubusercontent.com/rahulnyk/KnowledgeX/main/assets/poster-2-setup.png"><img src="https://raw.githubusercontent.com/rahulnyk/KnowledgeX/main/assets/readme/poster-2-setup.png" width="32%" alt="Setting it up"></a>
-  <a href="https://raw.githubusercontent.com/rahulnyk/KnowledgeX/main/assets/poster-3-what-to-expect.png"><img src="https://raw.githubusercontent.com/rahulnyk/KnowledgeX/main/assets/readme/poster-3-what-to-expect.png" width="32%" alt="What to expect"></a>
-</p>
+![Why KnowledgeX — one notebook, both of you](https://raw.githubusercontent.com/rahulnyk/KnowledgeX/main/assets/readme/01-why.png)
+
+![Setting it up — three clicks, then just talk](https://raw.githubusercontent.com/rahulnyk/KnowledgeX/main/assets/readme/02-setup.png)
+
+![What to expect — it asks first, always](https://raw.githubusercontent.com/rahulnyk/KnowledgeX/main/assets/readme/03-what-to-expect.png)
 
 ## Get started
 
