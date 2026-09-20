@@ -1,12 +1,12 @@
 # KnowledgeX
 
-**A memory for your AI that keeps what matters, and nothing else.**
+**A personal knowledge library you and your AI build together.**
 
-AI assistants forget everything when a conversation ends. The usual fixes go too far the other way: they save everything, and before long the "memory" is a pile of outdated fragments nobody trusts.
+What you know ends up scattered: in chat histories that disappear, in notes you never reread, and in your own head. AI assistants don't fix that. They start from nothing every conversation, or they save everything until the pile is too unreliable to use.
 
-KnowledgeX works like a careful assistant taking notes. At the end of a conversation, your AI suggests what's worth keeping, such as a decision and the reason for it, a preference, a lesson, or a person you work with. It saves only what you approve. Later, when you ask about it, it tells you what it knows and how far to trust it: whether you confirmed it, and whether it might be out of date.
+KnowledgeX gives you both one library to work from. At the end of a conversation, your AI offers what's worth keeping, such as a decision and the reason for it, a preference, a lesson, or a person you work with, and saves only what you approve. Each note links to the ones it relates to, so the library grows into a knowledge graph of what you know, one conversation at a time.
 
-Your notes are plain text files in a folder on your computer.
+It's plain markdown in a folder on your computer. Read, edit and rearrange it in any editor, such as Obsidian; your AI reads and writes the same files. When it answers from a note, it says which note, whether you confirmed it, and whether it might be out of date.
 
 > **Status:** early (v0.3). Things may still change.
 
