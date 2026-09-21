@@ -121,6 +121,24 @@ codex mcp add knowledgex -- npx -y knowledgex mcp
 
 Any app that can run a local MCP server can use KnowledgeX with the command `npx -y knowledgex mcp`. For apps without MCP, coding agents that run shell commands, and the `kx` command line, see the [technical guide](docs/technical.md).
 
+## Make it automatic
+
+After setup, KnowledgeX already works: the tools are there in every chat, your AI offers what's worth keeping at the end of a conversation, and "remember this" or "what did we decide about X?" always works.
+
+One habit is worth making explicit, because it's the quiet one. Unless your AI is told to, it may answer a question from the conversation alone and never look at your notes. Add this to your AI's standing instructions (in Claude Desktop, **Settings → Profile → personal preferences**, which applies to every chat):
+
+```
+I use KnowledgeX as my knowledge library. Before answering anything that depends on my earlier decisions, preferences, people, plans or lessons, search my notes first. At the end of a substantial conversation, tell me what's worth keeping, and save only what I approve.
+```
+
+**Working on one client or project?** Notes can live in their own notebook. Name it in that project's instructions, such as a Claude Project or a `CLAUDE.md` or `AGENTS.md` file in a repository:
+
+```
+Use the KnowledgeX notebook acme-case for this project. Search it before answering questions about this client, and save new notes there.
+```
+
+To go further and keep a connection to a single notebook, so nothing else is visible to it, see `KX_NOTEBOOK` in the [technical guide](docs/technical.md#settings).
+
 ## What using it looks like
 
 **Keeping something.** At the end of a useful conversation, your AI offers:
