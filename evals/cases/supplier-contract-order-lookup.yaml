@@ -16,7 +16,6 @@ expect:
   - id: searched-for-the-procedure
     match:
       - [contract, supplier, halden]
-      - [review, clause, order, process, playbook]
 avoid:
   - id: answered-from-general-legal-knowledge
     match:

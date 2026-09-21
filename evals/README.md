@@ -66,7 +66,7 @@ If your agent takes a file instead of standard input, put `{prompt_file}` in the
 Tips:
 
 - **Run agents from a neutral folder**, so project instructions or memory don't leak into the results, e.g. `--agent "cd /tmp && claude -p"`.
-- **Run from a normal terminal**, not from inside an agent session. Some agent CLIs refuse to start inside their own session.
+- **Run from a normal terminal**, not from inside an agent session, and not from a terminal inside an AI app. Some agent CLIs refuse to start inside their own session, and an app may set variables its own child processes rely on. The Claude Code desktop app sets `ANTHROPIC_BASE_URL`, which a `claude -p` started from its terminal inherits, so every case fails to authenticate. Either use Terminal or iTerm, or drop the variables in the agent command: `--agent "cd /tmp && env -u ANTHROPIC_BASE_URL -u CLAUDECODE claude -p"`.
 - **Local models need room.** Prompts are about 4,000 tokens, which is more than some local runtimes allow by default, so the guide can be silently cut off. Give the model a context window of at least 8,000 tokens; with Ollama, set `OLLAMA_CONTEXT_LENGTH=8192` when starting the server.
 
 **Chat apps with no command line.** Write the prompts, paste each one into the app, save each reply as `<case-id>.response.txt` in the same folder, then score:
