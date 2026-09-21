@@ -9,7 +9,7 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import * as kb from "../src/bundle.js";
 import { main } from "../src/cli.js";
 import { createServer } from "../src/mcp.js";
-import { checkCases, loadCases, main as evalsMain } from "../evals/run.js";
+import { checkCases, loadCases, main as evalsMain, promptFor, type Reply, scoreRetrieve } from "../evals/run.js";
 
 const AGENT = "test-agent/1.0";
 
@@ -144,6 +144,14 @@ test("notes edited in another editor, and wikilinks", (t) => {
 
 test("eval cases are valid", async () => {
   assert.deepEqual(checkCases(loadCases()), []);
+
+  // Retrieval cases fail an agent that answers from nothing, and the reminder goes into the prompt only when asked.
+  const lookup = loadCases(["client-update-channel-lookup"])[0];
+  assert.equal(scoreRetrieve(lookup, { tool_calls: [], answer: "I'd email them on Friday morning." }).passed, false);
+  assert.equal(scoreRetrieve(lookup, lookup.reference as Reply).passed, true);
+  assert.ok(!promptFor(lookup).includes("standing instructions"));
+  assert.ok(promptFor(lookup, true).includes("standing instructions"));
+  assert.ok(!promptFor(lookup).includes("meridian-update-routine.md"), "the notes stay hidden: finding them is the test");
   // pnpm passes the `--` from `pnpm run evals -- check` through to the script.
   const log = console.log;
   console.log = () => {};
