@@ -61,6 +61,12 @@ Claude looks through your notes and answers with where the answer came from:
 
 > By email every Friday, because the client finds calls disruptive. That's from your note "Client update routine", which hasn't been confirmed yet.
 
+**Make this automatic.** Claude doesn't always think to check your notes first, especially when you don't mention them. Open **Settings → Profile** in Claude Desktop and add this to your personal preferences, which apply to every chat:
+
+```
+I use KnowledgeX as my knowledge library. Before answering anything that depends on my earlier decisions, preferences, people, plans or lessons, search my notes first. At the end of a substantial conversation, tell me what's worth keeping, and save only what I approve.
+```
+
 ---
 
 ## 5. Confirm the notes you trust
