@@ -59,6 +59,7 @@ A candidate must pass all five. If it fails one, write nothing, or keep only the
 | A goal with a strategy | `Plan` | Goal, approach, milestones, review points |
 | An idea worth revisiting | `Idea` | The idea, why it's interesting, the next step |
 | A book, article, or talk that shaped thinking | `Source` | Takeaways, and the user's own highlights |
+| *Anything the user read, watched, or listened to* | `Source`, one note | Its takeaways stay together in that one note. Splitting them into a `Lesson` or `Preference` loses where they came from; write those only when the user adopts one as their own stance |
 | Events whose history matters | `Timeline` | Dated entries, newest first |
 | A commitment or open loop | A `- [ ] TODO:` inside the related note | Action, owner, deadline |
 
@@ -72,6 +73,7 @@ A candidate must pass all five. If it fails one, write nothing, or keep only the
 - **Dead ends**, unless they teach a lesson. Then write the lesson.
 - **General knowledge** any model already has, unless it records the user's stance or situation.
 - **Copies of systems of record** such as code, tickets, statements, or documentation. Store a pointer.
+- **Contact details**: phone numbers, addresses, account handles. They belong in a contacts app or a CRM. Name the person and their role instead.
 - **Guesses presented as facts.** Write them as an `Idea`, or with `status: draft`.
 - **Raw tool output or long verbatim quotes.** Name the failure instead of pasting it: "loading data before roles fails" rather than the error text it printed.
 - **Secrets**: passwords, keys, tokens, account numbers. Ever.
@@ -137,6 +139,8 @@ Moments that feel important but rarely are:
 At the natural end of a substantial conversation, run the gates and offer a short list. Name what you would skip, so the user sees your judgment:
 
 > Worth keeping: (1) **Decision**: … (2) **Preference**: … Skipping: … Save these?
+
+**Prefer one note.** A conversation about a vendor, a purchase, or a piece of work usually produces one note, not a set. Someone mentioned in passing, such as the sales rep who signed the contract or the firm that did the work, belongs in a line of that note, not in a `Person` or `Entity` note of their own. Propose a second note only when it has its own name, would be searched for on its own, and has enough substance to stand up alone.
 
 Write only what the user approves. If nothing passes, offer nothing.
 
