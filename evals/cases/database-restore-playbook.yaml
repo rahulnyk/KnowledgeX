@@ -31,8 +31,10 @@ expect:
       load-with-psql: [["psql"]]
       reset-sequences: [["sequence", "setval"]]
 avoid:
-  - id: raw-error-messages
-    match: [["appears to be a text format dump", "app_rw does not exist", "duplicate key value violates"]]
+  - id: failed-command
+    match: [["pg_restore -d staging"]]
+  - id: trial-and-error-story
+    match: [["trial and error"]]
 reference:
   - action: new
     type: Playbook

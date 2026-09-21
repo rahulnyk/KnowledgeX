@@ -4,13 +4,40 @@ Results of running the cases against real agents. `evals/results/` is not commit
 
 | Date | Agent | Guide | Cases passed | Recall | Precision | Stayed quiet | Transient leaks |
 |---|---|---|---|---|---|---|---|
+| 2026-09-21 | Claude Code (Sonnet 4.6), `claude -p`, three runs | 0.3.1 + tuned guide | 13, 14, 17 of 20 | 100% | 86-95% | 5/5 (100%) | 2-5 leaks |
 | 2026-09-21 | Claude Code (Sonnet 4.6), `claude -p` | 0.3.1 + tuned "what to write" | 13/20 (65%) | 16/16 (100%) | 18/21 (86%) | 5/5 (100%) | 5 in 5 cases |
 | 2026-09-21 | Claude Code (Sonnet 4.6), `claude -p` | 0.3.1 | 13/20 (65%) | 16/16 (100%) | 17/18 (94%) | 5/5 (100%) | 7 in 6 cases |
 | 2026-09-13 | Llama 3.1 8B via Ollama | 0.1.0 | 4/20 (20%) | 12/16 (75%) | 15/28 (54%) | 2/5 (40%) | 7 in 7 cases |
 
 Retrieval cases were added in 0.3.1, and both runs used the standing-instruction reminder (`--reminder`): **looked before answering 2/2** in both, and **searched for the right thing 2/2** once the expect rules stopped demanding wording a sensible query needn't use.
 
-**Two runs is not a measurement.** The model is nondeterministic, and cases swapped between passing and failing while the total stayed at 13/20. Before tuning the guide any further, run the same configuration three times and see the spread.
+## The noise floor
+
+Three runs of the same configuration, same guide, scored 13, 14 and 17 out of 20. **Treat anything inside that range as noise.** A change is only worth believing if it moves the cases that fail every time, or moves the range as a whole across several runs.
+
+Failures by how often they repeat, over those three runs:
+
+| How often | Case | Fault |
+|---|---|---|
+| 3/3 | `article-takeaways-source` | An article's takeaways saved as the wrong type, missing two required details |
+| 3/3 | `language-learning-plan` | Keeps "free tier" |
+| 2/3 | `dependency-pinning-duplicate` | Creates a new note instead of updating the one that exists |
+| 2/3 | `api-versioning-decision` | Keeps a vendor's typo'd string |
+| 2/3 | `review-policy-contradiction` | Keeps how someone failed to find a document |
+| 1/3 | `analytics-vendor-entity`, `database-restore-playbook`, `release-cadence-supersede`, `tls-certificate-outage-lesson` | Various |
+
+Retrieval, with `--reminder` on: **looked before answering 2/2** in all three runs, and **searched for the right thing 2/2**. The supplier case failed once, on answering from general knowledge.
+
+**Duplicate avoidance is the most valuable of these.** A library fills with near-duplicates if an agent creates where it should update, which is the failure KnowledgeX exists to prevent.
+
+## Two cases were wrong, not the agent
+
+Scoring the same three runs after fixing them gives 13, 14 and 17.
+
+- **`database-restore-playbook`** banned the error messages the restore prints. A playbook is more useful when it names the symptom a reader will see, so the rule now catches the failed command and the trial-and-error story instead.
+- **`dependency-pinning-duplicate`** banned naming the incident, which contradicted the guide's own requirement that a `Lesson` carry a one-line origin. It now catches the build status instead, and still catches creating a duplicate note.
+
+`language-learning-plan` was left alone: a plan tier changes, and the guide says to cut it.
 
 ## What the second run showed
 

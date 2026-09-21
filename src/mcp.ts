@@ -147,7 +147,7 @@ export function createServer(library: string, user: string, notebook?: string): 
     {
       title: "Save a new note",
       description:
-        "Save a new note to the user's long-term memory. Only call this after the user approved saving it, and after search_notes found no existing note to update. Read the 'write' guide first. Write the body in markdown: an italic one-line context sentence, then short ## sections with bullet points. Record reasons, not just conclusions.",
+        "Save a new note to the user's long-term memory. Only call this after the user approved saving it, and after search_notes found no existing note to update: two notes on one subject are worse than none, so prefer update_note whenever a note already covers the subject. Read the 'write' guide first. One conversation usually makes one note; someone mentioned in passing belongs in a line of it, not a note of their own. What the user read, watched, or listened to is a single Source note, with its takeaways inside it. Write the body in markdown: an italic one-line context sentence, then short ## sections with bullet points. Record reasons, not just conclusions.",
       inputSchema: {
         notebook: z.string().optional().describe("The notebook to save to. Required when there is more than one notebook; if you aren't certain which, ask the user first."),
         create_notebook: z.boolean().optional().describe("True to start the notebook if it doesn't exist yet. Only after the user agreed to a new notebook."),
@@ -183,7 +183,7 @@ export function createServer(library: string, user: string, notebook?: string): 
     {
       title: "Update a note",
       description:
-        "Change an existing note. Only call this after the user approved the change. Read the note first; `body` replaces the whole content, so include everything that should remain. Decisions can't be edited: save the new decision as its own note and use link_notes to mark it as replacing the old one. Changing a note means it needs checking again.",
+        "Change an existing note, which is the right call whenever the user's new knowledge belongs to a subject they already have a note on. Only call this after the user approved the change. Read the note first; `body` replaces the whole content, so include everything that should remain. Decisions can't be edited: save the new decision as its own note and use link_notes to mark it as replacing the old one. Changing a note means it needs checking again.",
       inputSchema: {
         file: z.string().min(1),
         change_summary: z.string().min(1).describe("What changed, in a few words"),
