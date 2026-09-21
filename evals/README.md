@@ -1,12 +1,15 @@
 # Judgment evals
 
-KnowledgeX lives or dies on judgment: an agent that saves the wrong things makes memory worse, not better. These evals measure that judgment. Each case gives an agent a finished conversation and the KnowledgeX guide, and checks what the agent proposes to keep.
+KnowledgeX lives or dies on judgment: an agent that saves the wrong things makes the library worse, not better, and an agent that never looks at it might as well not have one. These evals measure both.
+
+- **What to keep:** a case gives an agent a finished conversation and the guide, and checks what it proposes to keep.
+- **Retrieval:** a case gives an agent a question the user's notes can answer, and checks whether it searches before answering.
 
 They work with **any agent** that can take a prompt and reply in text.
 
 ## What a case tests
 
-Every case in [`cases/`](cases/) is a short, fictional conversation plus the answer key:
+Most cases in [`cases/`](cases/) are a short, fictional conversation plus the answer key:
 
 - **expect**: notes the agent should propose, with the right note type, the right action (`new`, `update`, `supersede`, `contradict`), and the key details that must be in them
 - **optional**: notes that are reasonable to propose but not required
@@ -14,7 +17,29 @@ Every case in [`cases/`](cases/) is a short, fictional conversation plus the ans
 - **bundle**: notes that already exist, for cases about updating, superseding, or flagging conflicts
 - **reference**: a hand-written ideal answer, used to validate the case itself
 
-The 20 cases cover decisions, lessons, playbooks, entities, people, preferences, plans, timelines, and sources. They also include updating, superseding, and flagging conflicts with existing notes, avoiding duplicates, keeping secrets out, and five conversations where **nothing** should be kept.
+The 20 keeping cases cover decisions, lessons, playbooks, entities, people, preferences, plans, timelines, and sources. They also include updating, superseding, and flagging conflicts with existing notes, avoiding duplicates, keeping secrets out, and five conversations where **nothing** should be kept.
+
+### Retrieval cases
+
+A case with `kind: retrieve` asks a question instead: the user says something ordinary, such as "I need to get this week's progress update to Meridian. How should I send it?", and the answer lives in a note. **The notes are not in the prompt** — finding them is the point. The agent is told it can call `search_notes` and `read_note`, and replies with the calls it would make and what it would say.
+
+- **expect**: the lookup the agent should make, matched against its tool calls and queries
+- **avoid**: specifics in the answer that it could only know by reading a note, which catch an agent answering from general knowledge or a guess
+- **bundle**: the notes that exist, used to write the case and to check the answer key
+
+These cases score three things: whether the agent looked before answering, whether it searched for the right thing, and whether it answered from nowhere.
+
+**Does telling the AI to search help?** The README suggests a line for an assistant's standing instructions. Add `--reminder` to put that line in the retrieval prompts, and compare two runs:
+
+```bash
+pnpm evals run --agent "cd /tmp && claude -p" --case client-update-channel-lookup --case supplier-contract-order-lookup
+```
+
+```bash
+pnpm evals run --agent "cd /tmp && claude -p" --case client-update-channel-lookup --case supplier-contract-order-lookup --reminder
+```
+
+The report says which mode it ran in, so the two are easy to tell apart.
 
 ## Run it
 

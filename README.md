@@ -121,6 +121,24 @@ codex mcp add knowledgex -- npx -y knowledgex mcp
 
 Any app that can run a local MCP server can use KnowledgeX with the command `npx -y knowledgex mcp`. For apps without MCP, coding agents that run shell commands, and the `kx` command line, see the [technical guide](docs/technical.md).
 
+## Make it automatic
+
+After setup, KnowledgeX already works: the tools are there in every chat, your AI offers what's worth keeping at the end of a conversation, and "remember this" or "what did we decide about X?" always works.
+
+One habit is worth making explicit, because it's the quiet one. Unless your AI is told to, it may answer a question from the conversation alone and never look at your notes. Add this to your AI's standing instructions (in Claude Desktop, **Settings → Profile → personal preferences**, which applies to every chat):
+
+```
+I use KnowledgeX as my knowledge library. Before answering anything that depends on my earlier decisions, preferences, people, plans or lessons, search my notes first. At the end of a substantial conversation, tell me what's worth keeping, and save only what I approve.
+```
+
+**Working on one client or project?** Notes can live in their own notebook. Name it in that project's instructions, such as a Claude Project or a `CLAUDE.md` or `AGENTS.md` file in a repository:
+
+```
+Use the KnowledgeX notebook acme-case for this project. Search it before answering questions about this client, and save new notes there.
+```
+
+To go further and keep a connection to a single notebook, so nothing else is visible to it, see `KX_NOTEBOOK` in the [technical guide](docs/technical.md#settings).
+
 ## What using it looks like
 
 **Keeping something.** At the end of a useful conversation, your AI offers:
@@ -161,6 +179,36 @@ The `kx` command line (`npm install -g knowledgex`) works for scripts and for co
 - **The MCP server and `kx` command** do the bookkeeping, so notes stay consistent whichever AI writes them.
 
 The notes are ordinary markdown files, so you can also browse them in Obsidian, VS Code, or any markdown editor, and edit them there. A note you edit yourself counts as confirmed by you.
+
+## What's next
+
+KnowledgeX is early, and these are the known gaps. The [design document](docs/design.md#6-roadmap) has the longer roadmap.
+
+**Measuring judgment**
+
+- Run the [evals](evals/README.md) against a strong model and tune the guides on what fails. The only baseline so far is a small local model.
+- Retrieval cases stop at whether the AI looked before answering. Checking that its answer names the note and says how far to trust it needs a second turn, where the search results come back to it.
+- No case covers choosing a notebook: saving to the right one, and asking when it isn't sure.
+
+**Using it every day**
+
+- Search ranks results within each notebook, not across notebooks.
+- Bring existing notes in, from a folder or another notes app: sort them through the five gates, keep what passes, and leave private folders out.
+- Connectors for Notion and Confluence (publishing first), and importing from Evernote and OneNote.
+- For teams: one notebook per team in git, where changes arrive as pull requests.
+
+**Trust and safety**
+
+- A symlink inside a notebook can point outside it; the folder check compares paths as text and doesn't follow links.
+- Anything that can write to the notes folder counts as the user, including another agent with file access.
+- An independent check that notebooks are valid OKF, written in TypeScript so it needs nothing else installed.
+- How a bundle inside another bundle should behave isn't covered by the Open Knowledge Format spec, and is worth proposing upstream.
+
+**Rough edges**
+
+- Claude Desktop warns that an extension has access to everything on your computer, which is true of any local extension. Submitting KnowledgeX to Anthropic's extension directory would remove the "not verified" part.
+- The extension has no icon.
+- The Perplexity steps and the Gemini desktop note need checking in the apps themselves.
 
 ## Learn more
 

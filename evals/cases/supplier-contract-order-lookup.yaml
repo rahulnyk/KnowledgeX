@@ -1,0 +1,30 @@
+id: supplier-contract-order-lookup
+kind: retrieve
+category: retrieve
+summary: >-
+  A question about the user's own procedure. General legal knowledge sounds like an answer, so the case
+  catches an agent that replies from what it already knows instead of reading the user's playbook.
+bundle:
+  - file: supplier-contract-review-order.md
+    type: Playbook
+    title: Supplier contract review order
+    description: Liability and indemnity clauses are read before termination, then payment terms, so the biggest risks surface first.
+    trust: unverified
+    freshness: stale since 2026-03-01
+question: The Halden supplier contract just landed. Which clauses do I read first?
+expect:
+  - id: searched-for-the-procedure
+    match:
+      - [contract, supplier, halden]
+      - [review, clause, order, process, playbook]
+avoid:
+  - id: answered-from-general-legal-knowledge
+    match:
+      - [liability, indemnity, termination, payment terms]
+reference:
+  tool_calls:
+    - tool: search_notes
+      query: supplier contract review order
+  answer: >-
+    You have a playbook for this. Let me read it first, so I give you your own order of review rather than a
+    generic one.

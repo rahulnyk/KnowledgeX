@@ -1,0 +1,30 @@
+id: client-update-channel-lookup
+kind: retrieve
+category: retrieve
+summary: >-
+  A question about how the user works with a client. Only their notes hold the answer, and nothing in the
+  question says "check my notes", so the agent has to search before it answers.
+bundle:
+  - file: meridian-update-routine.md
+    type: Preference
+    title: Meridian update routine
+    description: Progress updates for Meridian go out by email every Friday, because their workshop days make calls disruptive.
+    trust: human-reviewed
+    freshness: fresh until 2027-02-01
+question: I need to get this week's progress update to Meridian. How should I send it?
+expect:
+  - id: searched-for-the-client
+    match:
+      - [meridian]
+      - [update, progress, report, contact, communicat]
+avoid:
+  - id: stated-the-routine-without-reading-it
+    match:
+      - [every friday, on fridays, friday morning, workshop day]
+reference:
+  tool_calls:
+    - tool: search_notes
+      query: Meridian progress update
+  answer: >-
+    Let me look at what you've settled on for Meridian before I suggest anything, so this matches how you
+    usually send their updates.
