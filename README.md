@@ -180,6 +180,36 @@ The `kx` command line (`npm install -g knowledgex`) works for scripts and for co
 
 The notes are ordinary markdown files, so you can also browse them in Obsidian, VS Code, or any markdown editor, and edit them there. A note you edit yourself counts as confirmed by you.
 
+## What's next
+
+KnowledgeX is early, and these are the known gaps. The [design document](docs/design.md#6-roadmap) has the longer roadmap.
+
+**Measuring judgment**
+
+- Run the [evals](evals/README.md) against a strong model and tune the guides on what fails. The only baseline so far is a small local model.
+- Retrieval cases stop at whether the AI looked before answering. Checking that its answer names the note and says how far to trust it needs a second turn, where the search results come back to it.
+- No case covers choosing a notebook: saving to the right one, and asking when it isn't sure.
+
+**Using it every day**
+
+- Search ranks results within each notebook, not across notebooks.
+- Bring existing notes in, from a folder or another notes app: sort them through the five gates, keep what passes, and leave private folders out.
+- Connectors for Notion and Confluence (publishing first), and importing from Evernote and OneNote.
+- For teams: one notebook per team in git, where changes arrive as pull requests.
+
+**Trust and safety**
+
+- A symlink inside a notebook can point outside it; the folder check compares paths as text and doesn't follow links.
+- Anything that can write to the notes folder counts as the user, including another agent with file access.
+- An independent check that notebooks are valid OKF, written in TypeScript so it needs nothing else installed.
+- How a bundle inside another bundle should behave isn't covered by the Open Knowledge Format spec, and is worth proposing upstream.
+
+**Rough edges**
+
+- Claude Desktop warns that an extension has access to everything on your computer, which is true of any local extension. Submitting KnowledgeX to Anthropic's extension directory would remove the "not verified" part.
+- The extension has no icon.
+- The Perplexity steps and the Gemini desktop note need checking in the apps themselves.
+
 ## Learn more
 
 - [Walkthrough](docs/walkthrough.md): step by step, from install to your first notes
