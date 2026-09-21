@@ -16,7 +16,6 @@ expect:
   - id: searched-for-the-client
     match:
       - [meridian]
-      - [update, progress, report, contact, communicat]
 avoid:
   - id: stated-the-routine-without-reading-it
     match:

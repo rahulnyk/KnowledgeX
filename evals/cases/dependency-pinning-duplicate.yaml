@@ -30,8 +30,8 @@ expect:
       enforce-lockfile: [["lockfile", "lock file"], ["fail", "clean install", "enforce"]]
       scheduled-updates: [["week", "scheduled", "bot", "automat"]]
 avoid:
-  - id: error-output
-    match: [["eresolve", "fastjsonx"]]
+  - id: build-status
+    match: [["builds are green"]]
   - id: duplicate-lesson
     action: new
     fields: [title]
