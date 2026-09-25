@@ -65,14 +65,14 @@ A notes folder is a **library** of **notebooks**. Each notebook is an [OKF](http
 ```
 KnowledgeX/                 the library
   index.md                  generated list of notebooks
-  .knowledgex.json          confirmations made in this library, and which notebooks were received
+  .knowledgex.json          confirmations made in this library, note fingerprints, and which notebooks were received
   general/                  the default notebook
   acme-case/
 ```
 
 - **Add a notebook** by copying its folder into the library, or with `kx add FOLDER [--name NAME]`, which also checks it and refuses names already taken. It is picked up on the next tool call.
 - **Share a notebook** by copying its folder. `.knowledgex.json` stays behind.
-- **Trust doesn't travel with copies.** A confirmation counts only if it was made in this library and is recorded in `.knowledgex.json`. Confirmations that came with a copied notebook are still shown, but its notes count as unconfirmed until confirmed here. Losing `.knowledgex.json` has the same effect on every notebook. A bundle used directly with `--bundle` has no library, so its confirmations count as written.
+- **Trust doesn't travel with copies.** A confirmation counts only if it was made in this library and is recorded in `.knowledgex.json`. Confirmations that came with a copied notebook are still shown, but its notes count as unconfirmed until confirmed here. Losing `.knowledgex.json` has the same effect on every notebook. KnowledgeX writes it through a temporary file under a lock, so a crash or two apps writing at once can't damage it. If it can't be read anyway, it is set aside as `.knowledgex.json.unreadable-<time>` rather than overwritten, so its records can be restored. A bundle used directly with `--bundle` has no library, so its confirmations count as written.
 - **Pick a notebook per project** in the project's instructions (a Claude Desktop Project, `AGENTS.md`, or `CLAUDE.md`): *Use the KnowledgeX notebook acme-case.*
 - **Hard boundary:** a connection with `KX_NOTEBOOK` set only sees that notebook, for example:
 
@@ -167,7 +167,13 @@ Each notebook folder is flat and plain text, so it works with any markdown edito
 
 Notebooks are made to be opened in a markdown editor. A notes folder inside an Obsidian vault works as a vault folder.
 
-- **An edit you make is trusted.** KnowledgeX remembers a fingerprint of every note it writes, in `.knowledgex.json`. When a note's file no longer matches, it was edited somewhere else, which counts as your own confirmation: you wrote it, so you stand behind it. Anything else with write access to the folder counts the same way, so keep other tools out of it.
+- **What you write is trusted.** KnowledgeX keeps a fingerprint of every note in `.knowledgex.json`: the first time it sees a notebook, and each time it writes a note. When a note no longer matches, or a new note appears, you wrote it somewhere else. That counts as your own confirmation, in any notebook, including one someone sent you: you wrote it, so you stand behind it. It is shown with your name (`KX_USER`, or "Your name" in Claude Desktop), logged in `log.md`, restarts the note's expiry window, and rebuilds `index.md`, the next time any KnowledgeX tool runs. Your file itself isn't changed.
+- **Earlier confirmations stay visible.** After you change a note, search results still say who confirmed the version before your change, such as a colleague in the copy they sent you, and who has confirmed it since.
+- **What wasn't yours stays unconfirmed.** Notes that were already there when KnowledgeX first saw a notebook, such as notes an agent wrote before fingerprints existed or a notebook copied in, keep the trust their checks give them. So does a notebook folder that comes back after being missing.
+- **Anything else with write access to the folder counts as you**, including a sync client that finishes downloading a notebook after KnowledgeX first saw it. Keep other tools out of the folder.
+- **Line endings** don't count: a sync client or git converting them isn't an edit.
+- **Decisions** are replaced, not changed. If you change a decision an agent recorded, the check-up lists it, so you can save the change as a new decision instead. A decision you wrote yourself is yours to change.
 - **Links:** KnowledgeX writes markdown links, which Obsidian renders. It also follows `[[wikilinks]]` you write, so they count as real links, and `kx check` warns only that other OKF tools can't follow them. To have Obsidian write markdown links too: **Settings → Files and links** → turn off **Use [[Wikilinks]]** and set **New link format** to **Relative path to file**.
-- **After editing**, run `kx check` and `kx index`, or ask your AI for a check-up: a changed title or description isn't in `index.md` until the index is rebuilt, and the change isn't in `log.md`.
-- **Renaming** a note in an editor updates links in note bodies, but not `supersedes` and `contradicts` paths in frontmatter; `kx check` reports those. Ask your AI to rename instead: the file name stays, and the old title is kept as an alias.
+- **After editing**, run `kx check`, or ask your AI for a check-up, to catch format problems.
+- **Renaming** a note in an editor keeps its confirmations: a new file with the same content as a note that went missing is that note. Editors update links in note bodies, but not `supersedes` and `contradicts` paths in frontmatter; `kx check` reports those. Ask your AI to rename instead: the file name stays, and the old title is kept as an alias.
+- **Deleting** a note: its records are kept for 30 days, in case it comes back, as while a sync client restores it, then dropped.

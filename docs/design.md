@@ -245,9 +245,14 @@ Notebooks are plain markdown, so people open them in editors such as Obsidian. T
 
 **Hand edits count as confirmed by the user.** Editing a note outside KnowledgeX leaves `generated.at` untouched, so §4.4 can't see the change: the note keeps a confirmation that no longer covers its content. Rather than distrust such notes, KnowledgeX trusts them, on the user's reasoning that what they wrote themselves they stand behind.
 
-- The library records a fingerprint of every note KnowledgeX writes, next to the confirmations in `.knowledgex.json`. A note whose file no longer matches was edited elsewhere, and reads as human-reviewed.
-- A fingerprint is compared, not a timestamp, so copying, syncing, or a git checkout doesn't look like an edit. A note KnowledgeX never wrote here, such as one in a received notebook, has no fingerprint, so the copy rule (§4.11) still applies.
-- Saving through KnowledgeX again puts the note back under the usual rules.
+- The library records a fingerprint of every note, next to the confirmations in `.knowledgex.json`: when KnowledgeX writes it, and for every note already there the first time KnowledgeX sees a notebook. From then on, a note whose file no longer matches, or a note with no fingerprint, was written outside KnowledgeX. Each time the library opens, such notes are recorded as the user's own, with their name and the time, logged in `log.md`, and the index is rebuilt. That works in any notebook, including a received one.
+- Fingerprinting what is already there, rather than trusting anything without a fingerprint, keeps the copy rule (§4.11): a received notebook's notes, and notes an agent wrote before fingerprints existed, aren't taken for the user's. A notebook folder that returns after being missing is fingerprinted afresh, since it may be another copy.
+- A fingerprint is compared, not a timestamp, so copying, syncing, or a git checkout doesn't look like an edit. Line endings and a byte-order mark are ignored, so converting them doesn't either.
+- The user's file is never rewritten to record their edit: it may be open in their editor. So the edit lives in the library's records, and restarts the note's expiry window there, as a check would.
+- A new file with the content of a note that went missing is that note, renamed: its records move with it. Records of a note missing for 30 days are dropped; until then it may come back, as while a sync client restores it.
+- Saving through KnowledgeX again puts the note back under the usual rules. A check, or a link added by a relation, doesn't change what the note says, so it stays the user's.
+- A decision is replaced, never changed (§4.4). A change the user makes to a decision an agent recorded is listed in the review, so it can become a new decision. One the user wrote themselves is theirs to change.
+- The records are changed under a lock and written through a temporary file, so apps writing at once don't lose each other's records and a crash can't leave half a file. An unreadable file is set aside, not overwritten.
 - **The limit:** anything with write access to the folder counts as the user, including another agent. That is the same trust boundary as the notes folder itself, and §4.9 keeps the server inside it.
 - Maintenance leaves such notes alone, but their `index.md` entry may lag until the index is rebuilt.
 
@@ -317,7 +322,7 @@ Help people bring notes they already have into a bundle:
 | **Agents write too little** | Trigger list in the guide; recall in the evals |
 | **Evals reward keywords, not meaning** | Every case has a reference answer that must pass and a transcript dump that must fail; failures are read by hand before the guide is changed |
 | **People rubber-stamp verification** | Small, specific review items; per-fact footnotes so a single fact can be re-checked |
-| **Hand edits skip metadata** | Fingerprints spot them, and they count as the user's own confirmation (§4.12); `kx review` lists notes edited since their last check |
+| **Hand edits skip metadata** | Fingerprints spot them; they count as the user's own confirmation, and are logged (§4.12). Changed decisions are listed in the review |
 | **OKF is pre-1.0 and may change** | Declare `okf_version`; keep extensions to four keys; follow the spec closely |
 | **Sync conflicts with API-based tools** | Start with one-way publishing |
 | **Non-technical users can't judge what the AI saved** | Propose-first in plain language; confirmations shown in every answer; decisions immutable in code |

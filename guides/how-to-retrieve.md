@@ -31,7 +31,7 @@ Every fact taken from a note comes with its note, trust level, and freshness:
 - **Stale** ("stale since …"): say so. Offer to refresh it from its sources.
 - **Unverified**: use it, but say it hasn't been checked.
 - **Confirmed in another copy** (for example, in a notebook someone sent): say who confirmed it there, and that the user hasn't confirmed it here.
-- **Edited by the user in their own editor:** it counts as confirmed by them, since they wrote it. Read the note itself rather than trusting the description, which may not have kept up.
+- **Edited by the user in their own editor:** it counts as confirmed by them, since they wrote it. Read the note itself rather than trusting the description, which may not have kept up. Who confirmed the version before their change is still shown; say so if it matters, such as a colleague who checked the original.
 - **From a different notebook than expected**: say which notebook it came from.
 - **Contradiction**: show both sides and ask which holds.
 - **Nothing found**: say so plainly. Never fill the gap with a guess presented as memory.
