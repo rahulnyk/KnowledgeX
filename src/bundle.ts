@@ -1,6 +1,6 @@
 // Core operations on a KnowledgeX library: a folder of notebooks, each a flat OKF v0.2 bundle of markdown notes.
 import { createHash } from "node:crypto";
-import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, linkSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -716,7 +716,7 @@ function withState<T>(library: string, change: (state: LibraryState) => T): T {
   const outer = held.get(key);
   if (outer) return change(outer);
   const lock = join(key, STATE_LOCK);
-  const deadline = Date.now() + 15_000;
+  const deadline = Date.now() + (Number(process.env.KX_LOCK_WAIT_MS) || 15_000);
   for (;;) {
     try {
       writeFileSync(lock, String(process.pid), { flag: "wx" });
@@ -724,11 +724,8 @@ function withState<T>(library: string, change: (state: LibraryState) => T): T {
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
     }
-    try {
-      if (Date.now() - statSync(lock).mtimeMs > 10_000) rmSync(lock, { force: true }); // left by a crash: a change takes milliseconds
-    } catch {
-      // released meanwhile
-    }
+    const holder = lockHolder(lock);
+    if (holder !== undefined && !holder.alive) breakLock(lock, holder.pid);
     if (Date.now() > deadline) throw new KxError(`The notes library is busy. If no other KnowledgeX app is running, delete ${lock}.`);
     pause(20);
   }
@@ -741,8 +738,49 @@ function withState<T>(library: string, change: (state: LibraryState) => T): T {
     return result;
   } finally {
     held.delete(key);
-    rmSync(lock, { force: true });
+    if (lockHolder(lock)?.pid === process.pid) rmSync(lock, { force: true }); // only our own lock
   }
+}
+
+/**
+ * Who holds a lock: its process id, and whether that process is still running. A lock held for a long time is not
+ * taken away while its holder runs. One whose holder is gone was left by a crash; so is one far too old to be live,
+ * in case the holder's id was reused. Undefined if there is no lock.
+ */
+function lockHolder(lock: string): { pid: number; alive: boolean } | undefined {
+  let text: string;
+  let age: number;
+  try {
+    text = readFileSync(lock, "utf8");
+    age = Date.now() - statSync(lock).mtimeMs;
+  } catch {
+    return undefined;
+  }
+  const pid = Number(text);
+  if (age > 10 * 60_000) return { pid, alive: false };
+  if (!Number.isInteger(pid) || pid <= 0) return { pid, alive: age < 10_000 }; // just created, its id not yet written
+  try {
+    process.kill(pid, 0);
+    return { pid, alive: true };
+  } catch (error) {
+    return { pid, alive: (error as NodeJS.ErrnoException).code === "EPERM" }; // EPERM: running, as another user
+  }
+}
+
+/** Remove a lock left by `pid`. Moved aside first, so a lock another process has just taken in its place is put back. */
+function breakLock(lock: string, pid: number): void {
+  const aside = `${lock}.${process.pid}.stale`;
+  try {
+    renameSync(lock, aside);
+  } catch {
+    return; // already gone
+  }
+  try {
+    if (Number(readFileSync(aside, "utf8")) !== pid) linkSync(aside, lock);
+  } catch {
+    // a new lock was taken meanwhile; it stands
+  }
+  rmSync(aside, { force: true });
 }
 
 /** The library a notebook folder belongs to, or undefined for a bundle used on its own. */
@@ -761,9 +799,14 @@ function saveNote(path: string, text: string, keepEdit: boolean): void {
   const library = libraryOf(root);
   if (!library) return writeFileSync(path, text, "utf8");
   withState(library, (state) => {
-    writeFileSync(path, text, "utf8");
     const record = (state.notebooks[basename(root)] ??= {});
     const file = basename(path);
+    // A change the user made since the notebook was last looked at is recorded before this write replaces it.
+    const known = record.content?.[file];
+    if ((known || record.tracked) && existsSync(path) && digest(readFileSync(path, "utf8")) !== known) {
+      recordEdit(root, file, record, personId(), known === undefined);
+    }
+    writeFileSync(path, text, "utf8");
     record.content = { ...record.content, [file]: digest(text) };
     if (!keepEdit && record.edited?.[file]) delete record.edited[file]; // new content that isn't the user's
   });
@@ -890,10 +933,7 @@ function syncNotebook(library: string, name: string, record: NotebookRecord, by:
       appendLog(root, "Update", `Renamed ${from} to ${link} outside KnowledgeX.`);
       continue;
     }
-    const added = known === undefined || Boolean(edited[file]?.added);
-    const at = iso(new Date(Math.min(now().getTime(), Math.floor(statSync(path).mtimeMs / 1000) * 1000)));
-    edited[file] = { by, at, ...(added ? { added: true } : {}) };
-    appendLog(root, known === undefined ? "Creation" : "Update", `${known === undefined ? "Added" : "Edited"} ${link} outside KnowledgeX, by ${by}.`);
+    recordEdit(root, file, record, by, known === undefined);
   }
 
   const cutoff = now().getTime() - FORGET_AFTER_DAYS * 86_400_000;
@@ -909,6 +949,17 @@ function syncNotebook(library: string, name: string, record: NotebookRecord, by:
   }
   if (first) record.tracked = stamp;
   if (changed) writeIndex(root);
+}
+
+/** Record a note's content as the user's own, written (`added`) or changed outside KnowledgeX, and log it. */
+function recordEdit(root: string, file: string, record: NotebookRecord, by: string, added: boolean): void {
+  const path = join(root, file);
+  const edited = (record.edited ??= {});
+  const theirs = added || Boolean(edited[file]?.added);
+  const at = iso(new Date(Math.min(now().getTime(), Math.floor(statSync(path).mtimeMs / 1000) * 1000)));
+  edited[file] = { by, at, ...(theirs ? { added: true } : {}) };
+  const link = `[${titleOf(readNote(path))}](${encodePath(file)})`;
+  appendLog(root, added ? "Creation" : "Update", `${added ? "Added" : "Edited"} ${link} outside KnowledgeX, by ${by}.`);
 }
 
 /** A folder that holds notes directly, as v0.2 did, rather than an already-started library. */
@@ -979,10 +1030,19 @@ export function addNotebook(library: string, from: string, name?: string): strin
   if (!NOTEBOOK_NAME.test(target)) throw new KxError(`Notebook names use lowercase letters, digits, and hyphens, like client-acme. Got: ${target}`);
   if (existsSync(join(library, target))) throw new KxError(`There is already a notebook or folder named ${target}. Choose another name.`);
   openLibrary(library);
-  withState(library, (state) => {
-    cpSync(source, join(library, target), { recursive: true });
-    state.notebooks[target] = { received: iso(now()) }; // a fresh record, even if the library once had a notebook by this name
-  });
+  // Copied into a hidden folder first, which no one takes for a notebook, then moved into place in one step.
+  const incoming = join(library, `.incoming-${process.pid}-${target}`);
+  rmSync(incoming, { recursive: true, force: true });
+  cpSync(source, incoming, { recursive: true });
+  try {
+    withState(library, (state) => {
+      if (existsSync(join(library, target))) throw new KxError(`There is already a notebook or folder named ${target}. Choose another name.`);
+      renameSync(incoming, join(library, target));
+      state.notebooks[target] = { received: iso(now()) }; // a fresh record, even if the library once had a notebook by this name
+    });
+  } finally {
+    rmSync(incoming, { recursive: true, force: true });
+  }
   openLibrary(library); // fingerprints the notes as they arrived, so only later changes count as the user's
   return target;
 }

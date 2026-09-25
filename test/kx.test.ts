@@ -205,6 +205,14 @@ test("the user's own changes, recorded", (t) => {
   kb.openLibrary(library, "human:alex");
   assert.ok(!kb.review(root).has("Decisions changed outside KnowledgeX"));
 
+  // A change not yet recorded, such as one made just before a check through `kx --bundle`, is recorded before the write.
+  const acmeNow = readFileSync(acme, "utf8");
+  writeFileSync(acme, acmeNow.replace("- Wholesale.", "- Wholesale and retail."));
+  kb.verifyNote(root, note("acme.md"), AGENT);
+  assert.equal(kb.editOf(root, note("acme.md"))?.by, kb.personId());
+  assert.equal(kb.trustIn(root, note("acme.md")), "human-reviewed");
+  assert.match(readFileSync(join(root, "log.md"), "utf8"), /Edited \[Acme Retail\]\(acme\.md\) outside KnowledgeX, by human:/);
+
   // A decision an agent recorded is replaced, never changed: a change to it is flagged.
   const bill = join(root, "bill-monthly.md");
   writeFileSync(bill, readFileSync(bill, "utf8").replace("- Monthly.", "- Quarterly."));
@@ -265,9 +273,32 @@ test("the library's records survive crashes and apps writing at once", async (t)
   assert.equal(Object.keys(content).length, 20);
   assert.ok(!existsSync(`${statePath}.lock`));
 
-  // A lock left by a crash doesn't block the library for long.
-  writeFileSync(`${statePath}.lock`, "");
-  utimesSync(`${statePath}.lock`, new Date(0), new Date(0));
+  // A lock left by a crash doesn't block the library, whether its process is gone or the lock is far too old.
+  const lock = `${statePath}.lock`;
+  const ended = spawn(process.execPath, ["-e", ""]);
+  await new Promise((done) => ended.on("exit", done));
+  writeFileSync(lock, String(ended.pid));
+  assert.deepEqual(kb.openLibrary(library), ["general"]);
+  assert.ok(!existsSync(lock));
+  writeFileSync(lock, "");
+  utimesSync(lock, new Date(0), new Date(0));
+  assert.deepEqual(kb.openLibrary(library), ["general"]);
+
+  // A lock whose process is still running is never taken away, however long it has been held.
+  const running = spawn(process.execPath, ["-e", "setTimeout(() => {}, 30000)"]);
+  t.after(() => running.kill());
+  writeFileSync(lock, String(running.pid));
+  const minuteAgo = new Date(Date.now() - 60_000);
+  utimesSync(lock, minuteAgo, minuteAgo);
+  process.env.KX_LOCK_WAIT_MS = "200";
+  try {
+    assert.throws(() => kb.openLibrary(library), /busy/);
+  } finally {
+    delete process.env.KX_LOCK_WAIT_MS;
+  }
+  assert.equal(readFileSync(lock, "utf8"), String(running.pid), "left in place");
+  running.kill();
+  await new Promise((done) => running.on("exit", done));
   assert.deepEqual(kb.openLibrary(library), ["general"]);
 
   // An unreadable file is set aside for recovery, not overwritten, and nothing counts as confirmed until then.
