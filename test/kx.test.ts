@@ -251,6 +251,21 @@ test("the user's own changes, recorded", (t) => {
   writeFileSync(join(received, "their-lesson.md"), `${readFileSync(join(received, "their-lesson.md"), "utf8")}- y\n`);
   kb.openLibrary(library, "human:alex");
   assert.equal(kb.trustIn(received, kb.openNote(received, "their-lesson.md")), "human-reviewed");
+
+  // The change keeps the history: who confirmed the earlier version is still shown, and who confirmed it since.
+  const samChecked = join(received, "sam-checked.md");
+  writeFileSync(samChecked, "---\ntype: Lesson\ntitle: Sam's rule\ndescription: d\nstatus: stable\ngenerated:\n  by: a/1\n  at: 2026-01-01T00:00:00Z\nverified:\n  - by: human:sam\n    at: 2026-01-02T00:00:00Z\n---\n- x\n");
+  const late = join(dir, "late");
+  kb.ensureBundle(late);
+  cpSync(samChecked, join(late, "sam-checked.md"));
+  unlinkSync(samChecked);
+  const lateBook = join(library, kb.addNotebook(library, late, "from-sam-later"));
+  const samNote = () => kb.openNote(lateBook, "sam-checked.md");
+  assert.deepEqual(kb.checksAroundEdit(lateBook, samNote()), { before: [], since: [] }, "not the user's until they change it");
+  writeFileSync(join(lateBook, "sam-checked.md"), `${readFileSync(join(lateBook, "sam-checked.md"), "utf8")}- y\n`);
+  kb.openLibrary(library, "human:alex");
+  kb.verifyNote(lateBook, samNote(), "human:alex");
+  assert.deepEqual(kb.checksAroundEdit(lateBook, samNote()), { before: ["human:sam (in another copy)"], since: ["human:alex"] });
 });
 
 test("the library's records survive crashes and apps writing at once", async (t) => {

@@ -1117,6 +1117,23 @@ export function trustIn(root: string, note: Note): Trust {
   return editedHere(root, note) ? "human-reviewed" : trust(note.meta, localChecks(root, note));
 }
 
+/**
+ * For a note the user changed, who had confirmed it: before their change, and since. Checks made in another copy
+ * are named as such. A change keeps the history rather than hiding it: who confirmed the earlier version still matters.
+ */
+export function checksAroundEdit(root: string, note: Note): { before: string[]; since: string[] } {
+  const edit = editOf(root, note);
+  if (!edit) return { before: [], since: [] };
+  const local = localChecks(root, note);
+  const editedAt = parseTime(edit.at)?.getTime() ?? 0;
+  const here = (v: Record<string, any>) => !local || local.has(checkKey(v));
+  const names = (checks: Record<string, any>[]) => [...new Set(checks.map((v) => `${v.by}${here(v) ? "" : " (in another copy)"}`))];
+  // A check made in another copy never saw the user's change, whatever its time says.
+  const after = (v: Record<string, any>) => here(v) && (parseTime(v.at)?.getTime() ?? 0) >= editedAt;
+  const valid = validVerifications(note.meta);
+  return { before: names(valid.filter((v) => !after(v))), since: names(valid.filter(after)) };
+}
+
 /** A note's freshness in this library. The user's own edit, like a check, starts a fresh expiry window. */
 export function freshnessIn(root: string, note: Note, moment: Date = now()): string {
   const edit = editOf(root, note);

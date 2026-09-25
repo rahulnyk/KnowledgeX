@@ -52,6 +52,9 @@ function describeNote(root: string, note: kb.Note, successors?: Map<string, stri
   if (edit) {
     const who = edit.by ? ` (${edit.by}, ${edit.at.slice(0, 10)})` : "";
     lines.push(`  the user ${edit.added ? "wrote" : "edited"} this note in their own editor${who}, so it counts as confirmed by them`);
+    const { before, since } = kb.checksAroundEdit(root, note);
+    if (before.length) lines.push(`  before that edit, confirmed by ${before.join(", ")}`);
+    if (since.length) lines.push(`  since that edit, confirmed by ${since.join(", ")}`);
   }
   const elsewhere = local && !edited ? [...new Set(kb.validVerifications(meta).filter((v) => !local.has(kb.checkKey(v))).map((v) => String(v.by)))] : [];
   if (elsewhere.length) lines.push(`  confirmed by ${elsewhere.join(", ")} in another copy; not confirmed in this library`);
