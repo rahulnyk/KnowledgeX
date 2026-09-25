@@ -1,9 +1,10 @@
 // End-to-end checks for the kx command line, the core library, and the MCP server. Run with: pnpm test
 import assert from "node:assert/strict";
-import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, unlinkSync, utimesSync, writeFileSync } from "node:fs";
+import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, unlinkSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { test } from "node:test";
+import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import * as kb from "../src/bundle.js";
@@ -140,6 +141,141 @@ test("notes edited in another editor, and wikilinks", (t) => {
   const copied = kb.openNote(join(library, added), "their-lesson.md");
   assert.equal(kb.editedHere(join(library, added), copied), false);
   assert.equal(kb.trustIn(join(library, added), copied), "unverified");
+});
+
+test("the user's own changes, recorded", (t) => {
+  const dir = tempDir(t);
+  const library = join(dir, "notes");
+  const root = join(library, kb.openLibrary(library, "human:alex")[0]);
+  const note = (file: string) => kb.openNote(root, file);
+  const state = () => JSON.parse(readFileSync(join(library, ".knowledgex.json"), "utf8")).notebooks;
+  kb.createNote(root, { type: "Entity", title: "Acme", description: "A client.", body: "## About\n- Retail.\n", by: AGENT });
+  kb.createNote(root, { type: "Decision", title: "Bill monthly", description: "d", body: "## Decision\n- Monthly.\n", by: AGENT });
+  kb.createNote(root, { type: "Lesson", title: "Ask early", description: "d", body: "## Rule\n- Ask.\n", by: AGENT });
+
+  // Notes written before fingerprints existed are fingerprinted as they are the first time the library opens:
+  // what an agent wrote doesn't become the user's, but any change after that does.
+  // A change made to a note that already had a fingerprint, from 0.3.1, is still the user's.
+  const lesson = join(root, "ask-early.md");
+  writeFileSync(lesson, `${readFileSync(lesson, "utf8")}- Before the kickoff.\n`);
+  const legacy = state();
+  delete legacy.general.tracked;
+  delete legacy.general.content["acme.md"];
+  writeFileSync(join(library, ".knowledgex.json"), JSON.stringify({ notebooks: legacy }));
+  kb.openLibrary(library, "human:alex");
+  assert.ok(state().general.content["acme.md"] && state().general.tracked);
+  assert.equal(kb.trustIn(root, note("acme.md")), "unverified");
+  assert.equal(kb.editOf(root, note("ask-early.md"))?.by, "human:alex");
+  kb.updateNote(root, note("ask-early.md"), { body: "## Rule\n- Ask.\n" }, AGENT);
+
+  // A change made in another editor is recorded as the user's, with their name, logged, and indexed.
+  const acme = join(root, "acme.md");
+  writeFileSync(acme, readFileSync(acme, "utf8").replace("title: Acme", "title: Acme Retail").replace("- Retail.", "- Retail, since 2019."));
+  assert.equal(kb.editOf(root, note("acme.md"))?.by, "", "seen before it is recorded");
+  kb.openLibrary(library, "human:alex");
+  assert.deepEqual(Object.keys(kb.editOf(root, note("acme.md"))!), ["by", "at"]);
+  assert.equal(kb.editOf(root, note("acme.md"))!.by, "human:alex");
+  assert.equal(kb.trustIn(root, note("acme.md")), "human-reviewed");
+  assert.match(readFileSync(join(root, "log.md"), "utf8"), /Edited \[Acme Retail\]\(acme\.md\) outside KnowledgeX, by human:alex/);
+  assert.match(readFileSync(join(root, "index.md"), "utf8"), /\[Acme Retail\]/);
+  kb.openLibrary(library, "human:alex");
+  assert.equal(readFileSync(join(root, "log.md"), "utf8").match(/Acme Retail.*outside KnowledgeX/g)?.length, 1, "recorded once");
+
+  // The user's edit starts a fresh expiry window, as a check does, without touching their file.
+  const expired = readFileSync(acme, "utf8").replace(/stale_after: .*/, "stale_after: 2000-01-01T00:00:00Z");
+  writeFileSync(acme, expired);
+  assert.match(kb.freshness(note("acme.md").meta), /^stale/);
+  kb.openLibrary(library, "human:alex");
+  assert.match(kb.freshnessIn(root, note("acme.md")), /^fresh until/);
+  assert.equal(readFileSync(acme, "utf8"), expired);
+
+  // A check or a link keeps the content the user's; an agent's change does not.
+  kb.verifyNote(root, note("acme.md"), AGENT);
+  assert.equal(kb.trustIn(root, note("acme.md")), "human-reviewed");
+  kb.updateNote(root, note("acme.md"), { body: "## About\n- Wholesale.\n" }, AGENT);
+  assert.equal(kb.trustIn(root, note("acme.md")), "unverified");
+
+  // A note written by hand is the user's too, in any notebook, and a decision they wrote is theirs to shape.
+  writeFileSync(join(root, "my-own.md"), "---\ntype: Decision\ntitle: Mine\ndescription: d\nstatus: stable\n---\nMine.\n");
+  kb.openLibrary(library, "human:alex");
+  assert.equal(kb.editOf(root, note("my-own.md"))?.added, true);
+  assert.equal(kb.trustIn(root, note("my-own.md")), "human-reviewed");
+  assert.match(readFileSync(join(root, "log.md"), "utf8"), /Added \[Mine\]\(my-own\.md\) outside KnowledgeX/);
+  writeFileSync(join(root, "my-own.md"), readFileSync(join(root, "my-own.md"), "utf8") + "Still mine.\n");
+  kb.openLibrary(library, "human:alex");
+  assert.ok(!kb.review(root).has("Decisions changed outside KnowledgeX"));
+
+  // A decision an agent recorded is replaced, never changed: a change to it is flagged.
+  const bill = join(root, "bill-monthly.md");
+  writeFileSync(bill, readFileSync(bill, "utf8").replace("- Monthly.", "- Quarterly."));
+  kb.openLibrary(library, "human:alex");
+  assert.match(kb.review(root).get("Decisions changed outside KnowledgeX")?.[0] ?? "", /^bill-monthly\.md .*changed by human:alex/);
+
+  // Line endings converted by a sync client or git are not an edit.
+  const ask = join(root, "ask-early.md");
+  writeFileSync(ask, `\uFEFF${readFileSync(ask, "utf8").replace(/\n/g, "\r\n")}`);
+  kb.openLibrary(library, "human:alex");
+  assert.equal(kb.editedHere(root, note("ask-early.md")), false);
+
+  // A renamed note keeps its confirmations; records of a note gone for a month are dropped.
+  kb.verifyNote(root, note("ask-early.md"), "human:alex");
+  renameSync(ask, join(root, "ask-questions-early.md"));
+  kb.openLibrary(library, "human:alex");
+  assert.equal(kb.trustIn(root, note("ask-questions-early.md")), "human-reviewed");
+  assert.equal(kb.editedHere(root, note("ask-questions-early.md")), false, "a rename is not an edit");
+  assert.equal(state().general.confirmed["ask-early.md"], undefined);
+  assert.match(readFileSync(join(root, "log.md"), "utf8"), /Renamed ask-early\.md to \[Ask early\]\(ask-questions-early\.md\)/);
+  unlinkSync(join(root, "my-own.md"));
+  kb.openLibrary(library, "human:alex");
+  assert.ok(state().general.missing["my-own.md"], "kept while it may come back");
+  const aged = JSON.parse(readFileSync(join(library, ".knowledgex.json"), "utf8"));
+  aged.notebooks.general.missing["my-own.md"] = "2000-01-01T00:00:00Z";
+  writeFileSync(join(library, ".knowledgex.json"), JSON.stringify(aged));
+  kb.openLibrary(library, "human:alex");
+  assert.ok(!("my-own.md" in state().general.content) && !("my-own.md" in (state().general.edited ?? {})));
+
+  // In a received notebook, what arrived isn't the user's, but what they change there is.
+  const theirs = join(dir, "theirs");
+  kb.ensureBundle(theirs);
+  kb.createNote(theirs, { type: "Lesson", title: "Their lesson", description: "d", body: "- x\n", by: AGENT });
+  const received = join(library, kb.addNotebook(library, theirs, "from-sam"));
+  assert.equal(kb.trustIn(received, kb.openNote(received, "their-lesson.md")), "unverified");
+  writeFileSync(join(received, "their-lesson.md"), `${readFileSync(join(received, "their-lesson.md"), "utf8")}- y\n`);
+  kb.openLibrary(library, "human:alex");
+  assert.equal(kb.trustIn(received, kb.openNote(received, "their-lesson.md")), "human-reviewed");
+});
+
+test("the library's records survive crashes and apps writing at once", async (t) => {
+  const dir = tempDir(t);
+  const library = join(dir, "notes");
+  kb.openLibrary(library);
+  const statePath = join(library, ".knowledgex.json");
+
+  // Several processes saving at once: every fingerprint is kept.
+  const { spawn } = await import("node:child_process");
+  const cli = fileURLToPath(new URL("../src/cli.js", import.meta.url));
+  const env = { ...process.env, KX_BUNDLE: library };
+  const run = (i: number) =>
+    new Promise<number>((done) => {
+      const script = `for n in 1 2 3 4 5; do node ${JSON.stringify(cli)} new Idea "Idea ${i} $n" --description d --by ${AGENT} >/dev/null || exit 1; done`;
+      spawn("sh", ["-c", script], { env, stdio: "inherit" }).on("exit", (code) => done(code ?? 1));
+    });
+  assert.deepEqual(await Promise.all([1, 2, 3, 4].map(run)), [0, 0, 0, 0]);
+  const content = JSON.parse(readFileSync(statePath, "utf8")).notebooks.general.content;
+  assert.equal(Object.keys(content).length, 20);
+  assert.ok(!existsSync(`${statePath}.lock`));
+
+  // A lock left by a crash doesn't block the library for long.
+  writeFileSync(`${statePath}.lock`, "");
+  utimesSync(`${statePath}.lock`, new Date(0), new Date(0));
+  assert.deepEqual(kb.openLibrary(library), ["general"]);
+
+  // An unreadable file is set aside for recovery, not overwritten, and nothing counts as confirmed until then.
+  writeFileSync(statePath, '{"notebooks": {"general": {"confir');
+  assert.deepEqual(kb.openLibrary(library), ["general"]);
+  assert.ok(readdirSync(library).some((name) => name.startsWith(".knowledgex.json.unreadable-")));
+  assert.ok(JSON.parse(readFileSync(statePath, "utf8")).notebooks.general.tracked);
+  assert.ok(!readdirSync(library).some((name) => name.endsWith(".tmp")), "written through a temporary file");
 });
 
 test("eval cases are valid", async () => {

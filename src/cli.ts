@@ -203,8 +203,10 @@ export function main(argv: string[], print: (text: string) => void = console.log
         const file = kb.rel(note.path, root);
         const meta = note.meta;
         print(`\n${file}: ${kb.titleOf(note)}`);
-        print(`    ${[meta.type ?? "?", kb.trustIn(root, note), kb.freshness(meta), meta.status ?? "?"].join(" · ")}`);
+        print(`    ${[meta.type ?? "?", kb.trustIn(root, note), kb.freshnessIn(root, note), meta.status ?? "?"].join(" · ")}`);
         if (meta.description) print(`    ${meta.description}`);
+        const edit = kb.editOf(root, note);
+        if (edit) print(`    ${edit.added ? "written" : "changed"} outside KnowledgeX${edit.by ? ` by ${edit.by}` : ""} on ${edit.at.slice(0, 10)}`);
         if (successors.has(file)) print(`    superseded by: ${successors.get(file)!.join(", ")}`);
         const contradicts = kb.relationTargets(note, root, "contradicts");
         if (contradicts.length) print(`    contradicts: ${contradicts.join(", ")}`);

@@ -61,7 +61,7 @@ function splitFrontmatter(text: string): { yaml: string; body: string } | null {
 }
 
 export function readNote(path: string): Note {
-  const text = readFileSync(path, "utf8");
+  const text = readFileSync(path, "utf8").replace(/^\uFEFF/, ""); // some Windows editors start files with a byte-order mark
   const parts = splitFrontmatter(text);
   if (!parts) return { path, meta: {}, body: text, error: "no YAML frontmatter" };
   let meta: unknown;
@@ -77,20 +77,23 @@ export function readNote(path: string): Note {
   return { path, meta: meta as Meta, body: parts.body, error: "" };
 }
 
-export function writeNote(note: Note): void {
+/** Write a note. `keepEdit`: the change leaves the content the user's own, as a check or an added link does. */
+export function writeNote(note: Note, keepEdit = false): void {
   const front = stringify(note.meta, { lineWidth: 0 });
-  const text = `---\n${front}---\n${note.body}`;
-  writeFileSync(note.path, text, "utf8");
-  recordContent(note.path, text);
+  saveNote(note.path, `---\n${front}---\n${note.body}`, keepEdit);
 }
 
-/** The notes in a bundle. Bundles are flat, so only the top level is read. */
-export function loadNotes(root: string): Note[] {
+/** The file names of the notes in a bundle. Bundles are flat, so only the top level is read. */
+function noteFiles(root: string): string[] {
   return readdirSync(root, { withFileTypes: true })
     .filter((entry) => entry.isFile() && entry.name.endsWith(".md") && !entry.name.startsWith(".") && !RESERVED.has(entry.name))
     .map((entry) => entry.name)
-    .sort()
-    .map((name) => readNote(join(root, name)));
+    .sort();
+}
+
+/** The notes in a bundle. */
+export function loadNotes(root: string): Note[] {
+  return noteFiles(root).map((name) => readNote(join(root, name)));
 }
 
 /** True if the folder already holds a KnowledgeX or OKF bundle. */
@@ -427,6 +430,7 @@ export function review(root: string, moment: Date = now()): Map<string, string[]
       "Stale",
       "Confirmed in another copy, not in this library",
       "Edited since last verified",
+      "Decisions changed outside KnowledgeX",
       "Sources changed since last verified",
       "Superseded but not deprecated",
       "Deprecated without a successor",
@@ -445,9 +449,14 @@ export function review(root: string, moment: Date = now()): Map<string, string[]
     const local = localChecks(root, note);
     const valid = validVerifications(meta, local);
     const verified = asList(meta.verified);
-    const edited = editedHere(root, note); // the user's own edit: trusted, so it needs no checking
+    const edit = editOf(root, note);
+    const edited = edit !== undefined; // the user's own edit: trusted, so it needs no checking
+    const fresh = freshnessIn(root, note, moment);
 
-    if (active && freshness(meta, moment).startsWith("stale")) push("Stale", `${item}: ${freshness(meta, moment)}`);
+    if (active && fresh.startsWith("stale")) push("Stale", `${item}: ${fresh}`);
+    // A decision is replaced by a new one, never changed, so its history stays true. One the user wrote themselves is theirs to shape.
+    if (active && edit && !edit.added && meta.type === "Decision")
+      push("Decisions changed outside KnowledgeX", `${item}: changed${edit.by ? ` by ${edit.by}` : ""} on ${edit.at.slice(0, 10)}`);
     if (active && !edited) {
       if (local && !valid.length && validVerifications(meta).length) push("Confirmed in another copy, not in this library", item);
       else if (verified.length && !valid.length) push("Edited since last verified", item);
@@ -604,7 +613,7 @@ export function verifyNote(root: string, note: Note, by: string): Trust {
   recordCheck(root, note, entry);
   const months = expiryMonths(note.meta.type);
   if (months && "stale_after" in note.meta) note.meta.stale_after = `${addMonths(day(stamp), months)}T00:00:00Z`; // a checked note starts a fresh expiry window
-  writeNote(note);
+  writeNote(note, true); // a check doesn't change the content
   appendLog(root, "Verification", `[${titleOf(note)}](${encodePath(rel(note.path, root))}) checked by ${by}.`);
   writeIndex(root);
   return trustIn(root, note);
@@ -624,12 +633,12 @@ export function relateNotes(root: string, source: Note, relation: Relation, targ
     source.meta[relation] = [...asList(source.meta[relation]).map(String), targetFile];
   }
   ensureLink(root, source, target, relation === "supersedes" ? "Supersedes" : "Contradicts");
-  writeNote(source);
+  writeNote(source, true); // an added link leaves the content the user's own
   const pair = `[${titleOf(source)}](${encodePath(sourceFile)}) ${relation} [${titleOf(target)}](${encodePath(targetFile)}).`;
   if (relation === "supersedes") {
     target.meta.status = "deprecated";
     ensureLink(root, target, source, "Superseded by");
-    writeNote(target);
+    writeNote(target, true);
     appendLog(root, "Supersession", pair);
   } else {
     appendLog(root, "Contradiction", pair);
@@ -641,24 +650,128 @@ export function relateNotes(root: string, source: Note, relation: Relation, targ
 
 export const DEFAULT_NOTEBOOK = "general";
 const STATE_FILE = ".knowledgex.json";
+const STATE_LOCK = ".knowledgex.json.lock";
 const LOCK_FILE = ".knowledgex.lock";
 const NOTEBOOK_NAME = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-type NotebookRecord = { received?: string; confirmed?: Record<string, string[]>; content?: Record<string, string> };
+const FORGET_AFTER_DAYS = 30;
+
+/** A change the user made to a note outside KnowledgeX. `added`: they wrote the note there. `by` is empty until recorded. */
+export type Edit = { by: string; at: string; added?: boolean };
+type NotebookRecord = {
+  received?: string; // when a notebook from elsewhere arrived
+  tracked?: string; // when its notes were first fingerprinted: any later change was made here
+  absent?: string; // since when the notebook folder has been missing
+  confirmed?: Record<string, string[]>; // checks made in this library
+  content?: Record<string, string>; // each note's fingerprint, as KnowledgeX last wrote or saw it
+  edited?: Record<string, Edit>; // notes whose current content is the user's own
+  missing?: Record<string, string>; // notes gone from the folder, and since when
+};
 type LibraryState = { notebooks: Record<string, NotebookRecord> };
 
+function parseState(text: string): LibraryState | null {
+  try {
+    const state = JSON.parse(text);
+    return isMapping(state?.notebooks) ? state : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The state as last written, for reading. Missing or unreadable, no confirmation counts, which fails safe. */
 function readState(library: string): LibraryState {
   try {
-    const state = JSON.parse(readFileSync(join(library, STATE_FILE), "utf8"));
-    if (isMapping(state?.notebooks)) return state;
+    return parseState(readFileSync(join(library, STATE_FILE), "utf8")) ?? { notebooks: {} };
   } catch {
-    // missing or unreadable: no confirmation counts until made again, which fails safe
+    return { notebooks: {} };
   }
+}
+
+/** The state for changing. An unreadable file is set aside rather than overwritten, so its records can be recovered. */
+function loadState(library: string): LibraryState {
+  const path = join(library, STATE_FILE);
+  if (!existsSync(path)) return { notebooks: {} };
+  const state = parseState(readFileSync(path, "utf8"));
+  if (state) return state;
+  renameSync(path, `${path}.unreadable-${iso(now()).replace(/[-:]/g, "")}`);
   return { notebooks: {} };
 }
 
+/** Written to a temporary file and renamed into place, so a crash or a sync client never leaves half a file. */
 function writeState(library: string, state: LibraryState): void {
-  writeFileSync(join(library, STATE_FILE), JSON.stringify(state, null, 2) + "\n", "utf8");
+  const path = join(library, STATE_FILE);
+  const temporary = `${path}.${process.pid}.tmp`;
+  writeFileSync(temporary, JSON.stringify(state, null, 2) + "\n", "utf8");
+  renameSync(temporary, path);
 }
+
+const held = new Map<string, LibraryState>();
+const pause = (ms: number) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+
+/**
+ * Change the library's state under a lock, so apps writing at once, such as two AI apps or an app and `kx`, don't
+ * lose each other's records. A nested call shares the outer call's state, which is written once, at the end.
+ */
+function withState<T>(library: string, change: (state: LibraryState) => T): T {
+  const key = resolve(library);
+  const outer = held.get(key);
+  if (outer) return change(outer);
+  const lock = join(key, STATE_LOCK);
+  const deadline = Date.now() + 15_000;
+  for (;;) {
+    try {
+      writeFileSync(lock, String(process.pid), { flag: "wx" });
+      break;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+    }
+    try {
+      if (Date.now() - statSync(lock).mtimeMs > 10_000) rmSync(lock, { force: true }); // left by a crash: a change takes milliseconds
+    } catch {
+      // released meanwhile
+    }
+    if (Date.now() > deadline) throw new KxError(`The notes library is busy. If no other KnowledgeX app is running, delete ${lock}.`);
+    pause(20);
+  }
+  try {
+    const state = loadState(key);
+    const before = JSON.stringify(state);
+    held.set(key, state);
+    const result = change(state);
+    if (JSON.stringify(state) !== before) writeState(key, state);
+    return result;
+  } finally {
+    held.delete(key);
+    rmSync(lock, { force: true });
+  }
+}
+
+/** The library a notebook folder belongs to, or undefined for a bundle used on its own. */
+function libraryOf(root: string): string | undefined {
+  const library = dirname(resolve(root));
+  return existsSync(join(library, STATE_FILE)) ? library : undefined;
+}
+
+/** A note's fingerprint. A byte-order mark and line endings are ignored, so a sync client or git converting them isn't an edit. */
+const digest = (text: string): string =>
+  createHash("sha256").update(text.replace(/^﻿/, "").replace(/\r\n?/g, "\n")).digest("hex").slice(0, 16);
+
+/** Write a note's file and remember its fingerprint, together, so another process never takes the write for the user's edit. */
+function saveNote(path: string, text: string, keepEdit: boolean): void {
+  const root = dirname(resolve(path));
+  const library = libraryOf(root);
+  if (!library) return writeFileSync(path, text, "utf8");
+  withState(library, (state) => {
+    writeFileSync(path, text, "utf8");
+    const record = (state.notebooks[basename(root)] ??= {});
+    const file = basename(path);
+    record.content = { ...record.content, [file]: digest(text) };
+    if (!keepEdit && record.edited?.[file]) delete record.edited[file]; // new content that isn't the user's
+  });
+}
+
+/** The user, as recorded for their own edits and confirmations. */
+export const personId = (user: string = process.env.KX_USER ?? ""): string =>
+  `human:${user.trim().toLowerCase().replace(/\s+/g, "-") || "user"}`;
 
 /** The notebooks in a library: subfolders that are OKF bundles. */
 export function notebooks(library: string): string[] {
@@ -690,26 +803,112 @@ export function libraryFor(folder: string): string {
 /**
  * Prepare a library and return its notebooks. A v0.2 bundle moves into `general` and keeps its confirmations,
  * an empty library gets `general`, and any other notebook seen for the first time is recorded as received.
+ * Each notebook's notes are then compared with their fingerprints, so changes the user made in their own editor
+ * are recorded as theirs. `by` is the user.
  */
-export function openLibrary(library: string): string[] {
+export function openLibrary(library: string, by: string = personId()): string[] {
   mkdirSync(library, { recursive: true });
   if (migrating(library)) return notebooks(library);
   if (isV02Bundle(library) && !migrate(library)) return notebooks(library);
-  const state = readState(library);
-  const before = JSON.stringify(state);
-  const stamp = iso(now());
-  let names = notebooks(library);
-  if (!names.length) {
-    state.notebooks[DEFAULT_NOTEBOOK] = {};
-    ensureBundle(join(library, DEFAULT_NOTEBOOK));
-    names = [DEFAULT_NOTEBOOK];
-  }
-  // Records of notebooks that are missing are kept: a notebook may be only briefly unreadable, such as while a sync
-  // client restores it. Keeping them is safe, because a copy's confirmations never match checks recorded here.
-  for (const name of names) state.notebooks[name] ??= { received: stamp };
-  if (JSON.stringify(state) !== before) writeState(library, state);
+  const names = withState(library, (state) => {
+    const stamp = iso(now());
+    let names = notebooks(library);
+    if (!names.length) {
+      state.notebooks[DEFAULT_NOTEBOOK] = {};
+      ensureBundle(join(library, DEFAULT_NOTEBOOK));
+      names = [DEFAULT_NOTEBOOK];
+    }
+    // Records of notebooks that are missing are kept: a notebook may be only briefly unreadable, such as while a sync
+    // client restores it. Keeping them is safe, because a copy's confirmations never match checks recorded here.
+    for (const [name, record] of Object.entries(state.notebooks)) if (!names.includes(name)) record.absent ??= stamp;
+    for (const name of names) {
+      const record = (state.notebooks[name] ??= { received: stamp });
+      // Back after being away, it may be another copy: its notes are fingerprinted afresh, not taken as the user's edits.
+      const returning = Boolean(record.absent);
+      delete record.absent;
+      syncNotebook(library, name, record, by, returning);
+    }
+    return names;
+  });
   writeLibraryIndex(library);
   return names;
+}
+
+/**
+ * Bring a notebook's fingerprints up to date with its folder. The first time a notebook is seen, and when it comes
+ * back after being missing (`afresh`), its notes are fingerprinted as they are. After that, a note whose file changed, or that appeared, was written outside KnowledgeX:
+ * it is recorded as the user's own, logged, and the index rebuilt. A new file with the content of a note that went
+ * missing is that note, renamed, and keeps its records. Records of a note gone for a month are dropped.
+ */
+function syncNotebook(library: string, name: string, record: NotebookRecord, by: string, afresh = false): void {
+  const root = join(library, name);
+  const stamp = iso(now());
+  const content = (record.content ??= {});
+  const edited = (record.edited ??= {});
+  const missing = (record.missing ??= {});
+  const confirmed = (record.confirmed ??= {});
+  const first = afresh || !record.tracked;
+  const files = noteFiles(root);
+  const present = new Set(files);
+  let changed = false;
+
+  for (const file of new Set([...Object.keys(content), ...Object.keys(confirmed), ...Object.keys(missing)])) {
+    if (present.has(file)) delete missing[file];
+    else if (!missing[file]) {
+      missing[file] = stamp;
+      changed = true;
+    }
+  }
+
+  for (const file of files) {
+    const path = join(root, file);
+    let text: string;
+    try {
+      text = readFileSync(path, "utf8");
+    } catch {
+      continue; // unreadable for now; looked at again next time
+    }
+    const seen = digest(text);
+    const known = content[file];
+    if (known === seen) continue;
+    content[file] = seen;
+    // A note KnowledgeX wrote and the user changed before notebooks were first fingerprinted is still their edit.
+    if (first && (known === undefined || afresh)) {
+      delete edited[file];
+      continue;
+    }
+    changed = true;
+    const link = `[${titleOf(readNote(path))}](${encodePath(file)})`;
+    const from = known === undefined ? Object.keys(missing).find((old) => content[old] === seen) : undefined;
+    if (from) {
+      for (const records of [content, edited, confirmed] as Record<string, unknown>[]) {
+        if (from in records) records[file] = records[from];
+        delete records[from];
+      }
+      content[file] = seen;
+      delete missing[from];
+      appendLog(root, "Update", `Renamed ${from} to ${link} outside KnowledgeX.`);
+      continue;
+    }
+    const added = known === undefined || Boolean(edited[file]?.added);
+    const at = iso(new Date(Math.min(now().getTime(), Math.floor(statSync(path).mtimeMs / 1000) * 1000)));
+    edited[file] = { by, at, ...(added ? { added: true } : {}) };
+    appendLog(root, known === undefined ? "Creation" : "Update", `${known === undefined ? "Added" : "Edited"} ${link} outside KnowledgeX, by ${by}.`);
+  }
+
+  const cutoff = now().getTime() - FORGET_AFTER_DAYS * 86_400_000;
+  for (const [file, since] of Object.entries(missing)) {
+    if ((parseTime(since)?.getTime() ?? 0) >= cutoff) continue;
+    delete content[file];
+    delete edited[file];
+    delete confirmed[file];
+    delete missing[file];
+  }
+  for (const key of ["content", "edited", "missing", "confirmed"] as const) {
+    if (!Object.keys(record[key] ?? {}).length) delete record[key];
+  }
+  if (first) record.tracked = stamp;
+  if (changed) writeIndex(root);
 }
 
 /** A folder that holds notes directly, as v0.2 did, rather than an already-started library. */
@@ -752,7 +951,9 @@ function migrate(library: string): boolean {
       const checks = validVerifications(note.meta).map(checkKey);
       if (checks.length) confirmed[rel(note.path, target)] = checks;
     }
-    writeState(library, { notebooks: { [DEFAULT_NOTEBOOK]: { confirmed } } });
+    withState(library, (state) => {
+      state.notebooks = { [DEFAULT_NOTEBOOK]: { confirmed } };
+    });
     return true;
   } finally {
     rmSync(lock, { force: true });
@@ -763,11 +964,11 @@ function migrate(library: string): boolean {
 export function createNotebook(library: string, name: string): void {
   if (!NOTEBOOK_NAME.test(name)) throw new KxError(`Notebook names use lowercase letters, digits, and hyphens, like client-acme. Got: ${name}`);
   openLibrary(library); // a v0.2 folder must become a library first, or the new notebook would end up inside general
-  if (existsSync(join(library, name))) throw new KxError(`There is already a notebook or folder named ${name}.`);
-  const state = readState(library);
-  state.notebooks[name] = {};
-  writeState(library, state);
-  ensureBundle(join(library, name));
+  withState(library, (state) => {
+    if (existsSync(join(library, name))) throw new KxError(`There is already a notebook or folder named ${name}.`);
+    state.notebooks[name] = { tracked: iso(now()) };
+    ensureBundle(join(library, name));
+  });
 }
 
 /** Copy a bundle into the library as a received notebook. Returns its name. */
@@ -778,11 +979,11 @@ export function addNotebook(library: string, from: string, name?: string): strin
   if (!NOTEBOOK_NAME.test(target)) throw new KxError(`Notebook names use lowercase letters, digits, and hyphens, like client-acme. Got: ${target}`);
   if (existsSync(join(library, target))) throw new KxError(`There is already a notebook or folder named ${target}. Choose another name.`);
   openLibrary(library);
-  cpSync(source, join(library, target), { recursive: true });
-  const state = readState(library);
-  state.notebooks[target] = { received: iso(now()) }; // a fresh record, even if the library once had a notebook by this name
-  writeState(library, state);
-  openLibrary(library);
+  withState(library, (state) => {
+    cpSync(source, join(library, target), { recursive: true });
+    state.notebooks[target] = { received: iso(now()) }; // a fresh record, even if the library once had a notebook by this name
+  });
+  openLibrary(library); // fingerprints the notes as they arrived, so only later changes count as the user's
   return target;
 }
 
@@ -808,55 +1009,62 @@ function writeLibraryIndex(library: string): void {
 
 /** For a note in a library's notebook, the checks made in this library; undefined for a bundle outside a library. */
 export function localChecks(root: string, note: Note): Set<string> | undefined {
-  const library = dirname(resolve(root));
-  if (!existsSync(join(library, STATE_FILE))) return undefined;
+  const library = libraryOf(root);
+  if (!library) return undefined;
   return new Set(readState(library).notebooks[basename(resolve(root))]?.confirmed?.[rel(note.path, root)] ?? []);
 }
 
 function recordCheck(root: string, note: Note, entry: Record<string, any>): void {
-  const library = dirname(resolve(root));
-  if (!existsSync(join(library, STATE_FILE))) return;
-  const state = readState(library);
-  const record = (state.notebooks[basename(resolve(root))] ??= {});
-  const file = rel(note.path, root);
-  record.confirmed = { ...record.confirmed, [file]: [...(record.confirmed?.[file] ?? []), checkKey(entry)] };
-  writeState(library, state);
-}
-
-const digest = (text: string): string => createHash("sha256").update(text).digest("hex").slice(0, 16);
-
-/** Remember what KnowledgeX wrote, so a later edit made in another editor can be recognised. */
-function recordContent(notePath: string, text: string): void {
-  const root = dirname(resolve(notePath));
-  const library = dirname(root);
-  if (!existsSync(join(library, STATE_FILE))) return;
-  const state = readState(library);
-  const record = (state.notebooks[basename(root)] ??= {});
-  record.content = { ...record.content, [basename(notePath)]: digest(text) };
-  writeState(library, state);
+  const library = libraryOf(root);
+  if (!library) return;
+  withState(library, (state) => {
+    const record = (state.notebooks[basename(resolve(root))] ??= {});
+    const file = rel(note.path, root);
+    record.confirmed = { ...record.confirmed, [file]: [...(record.confirmed?.[file] ?? []), checkKey(entry)] };
+  });
 }
 
 /**
- * True if the note's file changed since KnowledgeX last wrote it: someone edited it in another editor.
- * False for a note KnowledgeX has never written here, such as one that arrived in a copied notebook.
+ * The user's own change to a note made outside KnowledgeX, if the note's current content is theirs. A change not yet
+ * recorded, made since the library was last opened, has an empty `by`. A note in a notebook whose notes were never
+ * fingerprinted, such as one just copied in, has none.
  */
-export function editedHere(root: string, note: Note): boolean {
-  const library = dirname(resolve(root));
-  const written = readState(library).notebooks[basename(resolve(root))]?.content?.[rel(note.path, root)];
-  if (!written) return false;
+export function editOf(root: string, note: Note): Edit | undefined {
+  const library = libraryOf(root);
+  if (!library) return undefined;
+  const record = readState(library).notebooks[basename(resolve(root))];
+  const file = rel(note.path, root);
+  let seen: string;
   try {
-    return digest(readFileSync(note.path, "utf8")) !== written;
+    seen = digest(readFileSync(note.path, "utf8"));
   } catch {
-    return false;
+    return undefined;
   }
+  const known = record?.content?.[file];
+  if (known === seen) return record?.edited?.[file];
+  if (!known && !record?.tracked) return undefined;
+  return { by: "", at: iso(now()), ...(known ? {} : { added: true }) };
 }
 
+/** True if the note's current content is the user's own, written or changed in another editor. */
+export const editedHere = (root: string, note: Note): boolean => editOf(root, note) !== undefined;
+
 /**
- * A note's trust in this library. An edit the user made in their own editor, such as Obsidian, counts as
+ * A note's trust in this library. A note the user wrote or changed in their own editor, such as Obsidian, counts as
  * their confirmation: they wrote it, so they stand behind it.
  */
 export function trustIn(root: string, note: Note): Trust {
   return editedHere(root, note) ? "human-reviewed" : trust(note.meta, localChecks(root, note));
+}
+
+/** A note's freshness in this library. The user's own edit, like a check, starts a fresh expiry window. */
+export function freshnessIn(root: string, note: Note, moment: Date = now()): string {
+  const edit = editOf(root, note);
+  const months = expiryMonths(note.meta.type);
+  if (!edit || !months || !("stale_after" in note.meta)) return freshness(note.meta, moment);
+  const renewed = `${addMonths(edit.at.slice(0, 10), months)}T00:00:00Z`;
+  const current = parseTime(note.meta.stale_after);
+  return freshness(current && current > parseTime(renewed)! ? note.meta : { ...note.meta, stale_after: renewed }, moment);
 }
 
 /** A note's id across the library: `notebook/file`. */

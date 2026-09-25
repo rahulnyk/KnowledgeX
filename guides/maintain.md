@@ -16,12 +16,13 @@ Knowledge rots quietly. Maintenance keeps every notebook true, so that agents ca
 | **Stale** | Re-read the note's sources. If the facts still hold, record a check, which also restarts the note's expiry window. If they changed, update the key facts. If the note no longer matters, propose retiring it. |
 | **Confirmed in another copy, not in this library** | The notebook was copied in with its confirmations, which don't count here. Show the user what the note says and who confirmed it before, and record their confirmation if they agree. Start with the notes agents act on. |
 | **Edited since last verified** | Compare the content with its sources, or ask the user to confirm it. Then record the check. |
+| **Decisions changed outside KnowledgeX** | Someone changed a decision in their own editor. Decisions are replaced, not changed, so the history of what was decided stays true. Ask the user whether the change is a new decision. If it is, save it as its own note that supersedes the old one, and put the old decision's text back. If it was only a correction, such as a typo, nothing needs doing. |
 | **Sources changed since last verified** | Re-read the changed sources, update what they affect, and record a check once done. |
 | **Superseded but not deprecated** | Confirm the replacement is right, then retire the old note (`status: deprecated`). |
 | **Deprecated without a successor** | Either link the replacement as superseding it, or confirm the note was simply retired. |
 | **Open contradictions** | Show both sides to the user. Resolve by superseding the wrong note, or by correcting both. |
 | **Drafts** | Ask whether each draft is now solid (make it `stable`) or should be dropped. |
-| **Notes the user edited themselves** | They don't appear as work: the user's own edit counts as their confirmation. Their titles and descriptions may have moved on, so run the format check and rebuild the index when it reports one out of date. |
+| **Notes the user wrote or edited themselves** | They don't appear as work: the user's own edit counts as their confirmation, is logged, and restarts the note's expiry window. Their descriptions may have moved on, so run the format check. |
 | **Never verified** | Most important first: Decisions, Preferences, Principles, and Playbooks that agents act on. Check them against sources or with the user. |
 
 Also, now and then:
