@@ -6,7 +6,7 @@ import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse, stringify } from "yaml";
 
-export const VERSION = "0.3.1";
+export const VERSION = "0.3.2";
 export const OKF_VERSION = "0.2";
 export const RESERVED = new Set(["index.md", "log.md"]);
 export const STATUSES = ["draft", "stable", "deprecated"] as const;
