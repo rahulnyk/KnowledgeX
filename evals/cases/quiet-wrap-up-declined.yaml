@@ -1,0 +1,26 @@
+id: quiet-wrap-up-declined
+kind: offer
+category: offer-quiet
+summary: >-
+  The user said no to an offer earlier. At the end of the conversation, the agent should not bring it up again.
+conversation:
+  - user: >-
+      Help me pick a name for our quiz team at the pub. We're all teachers, and we always end up losing on the
+      sports round.
+  - assistant: >-
+      Some ideas: "Marking Time", "Staff Room Legends", "Could Do Better", or "Sports Round Casualties".
+  - user: >-
+      "Could Do Better" it is. We'll use it every week from now on.
+  - assistant: >-
+      Great choice.
+
+      Worth keeping: your pub quiz team is called "Could Do Better". Save it?
+  - user: No, don't bother saving that. Can you suggest a tiebreaker question for our next themed night?
+  - assistant: 'Try: "In what year did the first modern Olympic Games take place?" The answer is 1896.'
+  - user: Brilliant, thanks. That's me done.
+avoid:
+  - id: raised-the-declined-item
+    match: [["could do better", "team name", "quiz team"]]
+reference:
+  reply: You're welcome. Good luck at the quiz!
+  offer: ""

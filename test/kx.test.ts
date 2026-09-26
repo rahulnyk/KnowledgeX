@@ -10,7 +10,7 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import * as kb from "../src/bundle.js";
 import { main } from "../src/cli.js";
 import { createServer } from "../src/mcp.js";
-import { checkCases, loadCases, main as evalsMain, promptFor, type Reply, scoreRetrieve } from "../evals/run.js";
+import { checkCases, loadCases, main as evalsMain, type Offer, promptFor, type Reply, scoreOffer, scoreRetrieve } from "../evals/run.js";
 
 const AGENT = "test-agent/1.0";
 
@@ -334,6 +334,14 @@ test("eval cases are valid", async () => {
   assert.ok(!promptFor(lookup).includes("standing instructions"));
   assert.ok(promptFor(lookup, true).includes("standing instructions"));
   assert.ok(!promptFor(lookup).includes("meridian-update-routine.md"), "the notes stay hidden: finding them is the test");
+  // Offer cases: the offer is the last line of the reply, and a quiet turn fails any offer at all.
+  const due = loadCases(["offer-lesson-midway"])[0];
+  const offer = (due.reference as Offer).offer!;
+  assert.equal(scoreOffer(due, due.reference as Offer).passed, true);
+  assert.equal(scoreOffer(due, { reply: `${offer}\n\nUse =SUM(D2:D40).`, offer }).passed, false, "an offer before the answer interrupts it");
+  const quiet = loadCases(["offer-ignored-not-repeated"])[0];
+  assert.equal(scoreOffer(quiet, { reply: "About 200°C. Worth keeping: you publish in metric. Save it?", offer: "Worth keeping: you publish in metric. Save it?" }).passed, false);
+  assert.ok(promptFor(due).includes("save_note:"), "the agent sees what an AI app shows it");
   // pnpm passes the `--` from `pnpm run evals -- check` through to the script.
   const log = console.log;
   console.log = () => {};

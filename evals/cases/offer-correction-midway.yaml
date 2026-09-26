@@ -1,0 +1,27 @@
+id: offer-correction-midway
+kind: offer
+category: offer
+summary: >-
+  The user corrects a lasting fact about how their office works while rescheduling a meeting. The agent should
+  reschedule and offer the corrected fact, not the one-off meeting time.
+conversation:
+  - user: Can you help me find a slot for the budget review with Tomasz next week? Monday afternoon works for him.
+  - assistant: >-
+      Monday afternoon could work. Shall I suggest 2pm on Monday in your office?
+  - user: >-
+      No, our office is closed on Mondays now. We switched to Tuesday to Saturday at the start of the year. Let's
+      do Tuesday at 2pm instead. Can you write the invite text?
+expect:
+  - id: offered-the-office-days
+    match: [["monday"], ["closed", "office", "tuesday to saturday"]]
+avoid:
+  - id: the-one-off-meeting
+    match: [["budget review", "2pm", "tomasz"]]
+reference:
+  reply: |-
+    Here's the invite text:
+
+    "Budget review, Tuesday 2pm. Tomasz, let's go through next quarter's budget line by line. Please bring the latest spending figures."
+
+    Worth keeping: your office is closed on Mondays and open Tuesday to Saturday. Save it?
+  offer: "Worth keeping: your office is closed on Mondays and open Tuesday to Saturday. Save it?"

@@ -1,0 +1,26 @@
+id: offer-lesson-midway
+kind: offer
+category: offer
+summary: >-
+  A cause is found for a problem that has happened before, and the user moves on to the next job. The agent
+  should help with the next job and offer the lesson in one line.
+conversation:
+  - user: The invoice export from our spreadsheet came out blank again. Any idea why?
+  - assistant: >-
+      A few common causes: a filter hiding rows, an empty date range in the export settings, or the data sitting
+      on a different sheet. Is there a filter on?
+  - user: >-
+      Yes, that was it. Someone left a filter on the status column. That's the third time this has bitten us. OK,
+      next: can you give me a formula to total the March column, D2 to D40?
+expect:
+  - id: offered-the-lesson
+    match: [["filter"]]
+avoid:
+  - id: the-march-formula
+    match: [["march", "d2", "sum("]]
+reference:
+  reply: |-
+    Use =SUM(D2:D40). If a filter might be on, =SUBTOTAL(109, D2:D40) totals only the visible rows, so you can see when rows are hidden.
+
+    Worth keeping: when the invoice export comes out blank, check for a filter left on first; it has happened three times. Save it?
+  offer: "Worth keeping: when the invoice export comes out blank, check for a filter left on first; it has happened three times. Save it?"

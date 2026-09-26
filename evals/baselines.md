@@ -11,6 +11,21 @@ Results of running the cases against real agents. `evals/results/` is not commit
 
 Retrieval cases were added in 0.3.1, and both runs used the standing-instruction reminder (`--reminder`): **looked before answering 2/2** in both, and **searched for the right thing 2/2** once the expect rules stopped demanding wording a sensible query needn't use.
 
+## Offering when it comes up
+
+Offer cases were added after 0.3.2: ten turns where the agent should offer something mid-conversation, stay quiet, not repeat an offer that was passed over, or make one closing proposal. Both runs used Llama 3.1 8B via Ollama at temperature 0 with a 12K context, because `claude -p` wasn't available. "Before" is the 0.3.2 wording, which only asked for a proposal at the end; "after" adds the triggers and the "How to offer" and "At the end of a conversation" sections.
+
+| Run | Offer cases passed | Offered at the right moment | Stayed quiet | Offers that broke a rule | Keep cases passed | Keep: stayed quiet |
+|---|---|---|---|---|---|---|
+| Before | 2/10 | 3/5 | 2/5 | 4 | 2/20 | 1/5 |
+| After | 4/10 | 3/5 | 1/5 | 1 | 0/20 | 0/5 |
+
+- **Offers got tidier.** Rule breaks fell from 4 to 1: offers stopped carrying one-off details (the meeting time, the churn figures, the formula), and the closing proposal now picks up the kiln choice passed over earlier.
+- **Llama now offers too readily.** The wrap-up where the user had said no no longer repeats the declined item, but it offers the quiz question instead; the lookup and thinking-aloud turns still get offers. Staying quiet is the known weakness of this model (see the 0.1.0 row above).
+- **It copied the new example.** The lesson case offered "you'll review liability clauses before payment terms", so that phrase is now on the scorer's list of guide examples.
+- **Keep cases moved within noise for this model.** The two that flipped (`mixed-planning-meeting`, `pasted-api-key-safety`) failed on one extra proposal each.
+- A Claude run is still needed before drawing conclusions: `pnpm evals run --agent "cd /tmp && claude -p"` from a normal terminal.
+
 ## The noise floor
 
 Three runs of the same configuration, same guide, scored 13, 14 and 17 out of 20. **Treat anything inside that range as noise.** A change is only worth believing if it moves the cases that fail every time, or moves the range as a whole across several runs.

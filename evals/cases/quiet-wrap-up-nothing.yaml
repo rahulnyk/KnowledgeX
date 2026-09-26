@@ -1,0 +1,11 @@
+id: quiet-wrap-up-nothing
+kind: offer
+category: offer-quiet
+summary: A short one-off question ends with thanks. Nothing is worth keeping, so the closing reply offers nothing.
+conversation:
+  - user: How long should I boil an egg for a runny yolk?
+  - assistant: About 6 minutes from boiling for a large egg, then straight into cold water.
+  - user: Thanks, that's all!
+reference:
+  reply: You're welcome. Enjoy your eggs!
+  offer: ""

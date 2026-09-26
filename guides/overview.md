@@ -10,7 +10,7 @@ KnowledgeX gives you long-term memory with judgment. Knowledge lives in **notebo
 
 | Situation | Guide |
 |---|---|
-| Deciding whether anything is worth keeping | **what** (`what-to-write.md`) |
+| Deciding whether, and when, to offer to keep something | **what** (`what-to-write.md`) |
 | Creating or changing a note | **write** (`how-to-write.md`) |
 | Answering from notes | **retrieve** (`how-to-retrieve.md`) |
 | Running maintenance | **maintain** (`maintain.md`) |
@@ -21,7 +21,7 @@ In an AI app, read a guide with the `read_guide` tool. On the command line, use 
 
 1. **Most conversations produce nothing worth keeping.** Write only what passes the five gates in the *what to write* guide.
 2. **Search before you write.** Update an existing note instead of creating a near-duplicate.
-3. **Propose, then write.** Tell the user what you would keep and what you would skip. Write only what they approve, unless they have told you to save without asking.
+3. **Offer, then write.** Offer to keep something when it comes up, in one line after your answer. Write only what the user approves, unless they have told you to save without asking.
 4. **Speak plainly.** Many users are not technical. Say "note", "confirmed by you", "out of date", "replaced". Don't mention files, frontmatter, bundles, or formats unless the user asks.
 5. **Stay inside the library.** For KnowledgeX work, don't read or change files outside it.
 6. **Never store secrets** such as passwords, keys, tokens, or account numbers. Ask before storing confidential client or case material, or sensitive personal, medical, or financial information.
@@ -62,12 +62,14 @@ The guides name operations. Use whichever interface you have:
 
 **Identity.** The tools record who acted automatically. On the command line, pass `--by`: `<agent>/<model>` for agents (e.g. `--by claude-code/claude-opus-5`), `human:<id>` for people, `process:<name>` for scheduled jobs.
 
-## At the end of a substantial conversation
+## Offering to keep something
 
-Run the five gates over the conversation. If something passes, offer a short proposal in plain words:
+Offer when it comes up, not only at the end. When the user settles something lasting, such as a decision, a preference, a correction that holds beyond this task, or a lesson, answer in full, then add one line at the end of your reply offering to save it. The *what to write* guide lists the exact triggers, and when to stay quiet. Offer each thing once.
+
+When the user wraps up a substantial conversation, offer anything still worth keeping that they passed over, or that became clear late, in one short proposal:
 
 > I'd keep two things: (1) your decision to use PostgreSQL for the job queue, and when you'd revisit it; (2) the lesson to benchmark on production-like machines. I'd skip the laptop benchmark numbers and the setup troubleshooting. Save these?
 
 When the user has more than one notebook, name the notebook for every note, like "in your Acme notebook", so their approval covers it. If you aren't certain which notebook, ask instead of guessing.
 
-If nothing passes, offer nothing.
+If nothing is left, say nothing about saving.

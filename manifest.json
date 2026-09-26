@@ -4,7 +4,7 @@
   "display_name": "KnowledgeX",
   "version": "0.3.2",
   "description": "Long-term memory with judgment: Claude keeps what matters from your conversations, and nothing else.",
-  "long_description": "KnowledgeX gives Claude a memory you can trust. At the end of a conversation, Claude suggests what is worth keeping, such as decisions and the reasons behind them, preferences, lessons, and people. It saves only what you approve. Notes are plain text files in a folder on your computer, so nothing is stored anywhere else. Each note shows whether you have confirmed it and when it goes out of date, and Claude says so when it uses one.",
+  "long_description": "KnowledgeX gives Claude a memory you can trust. When something worth keeping comes up, such as a decision and the reason behind it, a preference, a lesson, or a person, Claude offers to save it in one line. It saves only what you approve. Notes are plain text files in a folder on your computer, so nothing is stored anywhere else. Each note shows whether you have confirmed it and when it goes out of date, and Claude says so when it uses one.",
   "author": {
     "name": "rahulnyk",
     "url": "https://github.com/rahulnyk"

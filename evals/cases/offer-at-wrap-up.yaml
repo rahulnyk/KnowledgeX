@@ -1,0 +1,39 @@
+id: offer-at-wrap-up
+kind: offer
+category: offer-wrap-up
+summary: >-
+  An offer made mid-conversation was ignored, and the user now signals the end. The agent should make one short
+  closing proposal that includes the ignored item, and nothing transient.
+conversation:
+  - user: >-
+      I'm choosing a kiln for my pottery studio. It's between a 240V model and a 3-phase one. The electrician
+      quoted £1,200 for the 3-phase wiring.
+  - assistant: >-
+      For a one-person studio, a 240V kiln is usually plenty and avoids the rewiring. The 3-phase option makes
+      sense if you plan to fire large batches often.
+  - user: >-
+      Let's go with the 240V one. I fire small batches, and I don't want to rewire the building. If I take on a
+      second potter, I'll reconsider. What shelves should I get for it?
+  - assistant: >-
+      Cordierite shelves are a good all-rounder: tough and affordable. Get two half shelves rather than one full
+      one, so they're easier to lift and less likely to crack.
+
+      Worth keeping: you chose a 240V kiln over 3-phase because you fire small batches and don't want to rewire,
+      and you'll reconsider if a second potter joins. Save it?
+  - user: What about posts to hold the shelves up?
+  - assistant: Get a set of posts in a few heights, such as 2, 4 and 6 inches, so you can adjust the spacing for taller pieces.
+  - user: Perfect, that's everything I needed. Thanks!
+expect:
+  - id: proposed-the-kiln-choice
+    match: [["240", "kiln"]]
+avoid:
+  - id: wiring-quote
+    match: [["£1,200", "1,200", "1200"]]
+  - id: shelf-and-post-details
+    match: [["cordierite", "posts", "inch"]]
+reference:
+  reply: |-
+    You're welcome, and good luck with the studio!
+
+    Before you go, one thing worth keeping: you chose a 240V kiln over 3-phase because you fire small batches and don't want to rewire, and you'll reconsider if a second potter joins. Save it?
+  offer: "Before you go, one thing worth keeping: you chose a 240V kiln over 3-phase because you fire small batches and don't want to rewire, and you'll reconsider if a second potter joins. Save it?"
