@@ -13,18 +13,17 @@ Retrieval cases were added in 0.3.1, and both runs used the standing-instruction
 
 ## Offering when it comes up
 
-Offer cases were added after 0.3.2: ten turns where the agent should offer something mid-conversation, stay quiet, not repeat an offer that was passed over, or make one closing proposal. Both runs used Llama 3.1 8B via Ollama at temperature 0 with a 12K context, because `claude -p` wasn't available. "Before" is the 0.3.2 wording, which only asked for a proposal at the end; "after" adds the triggers and the "How to offer" and "At the end of a conversation" sections.
+Offer cases were added after 0.3.2: ten turns where the agent should offer something mid-conversation, stay quiet, not repeat an offer that was passed over, or make one closing proposal. The offer is judged in the reply the user would see. Both runs used Llama 3.1 8B via Ollama at temperature 0 with a 12K context, because `claude -p` wasn't available. "Before" is the 0.3.2 wording, which only asked for a proposal at the end; "after" adds the triggers and the "How to offer" and "At the end of a conversation" sections.
 
 | Run | Offer cases passed | Offered at the right moment | Stayed quiet | Offers that broke a rule | Keep cases passed | Keep: stayed quiet |
 |---|---|---|---|---|---|---|
-| Before | 2/10 | 3/5 | 2/5 | 4 | 2/20 | 1/5 |
-| After | 4/10 | 3/5 | 1/5 | 1 | 0/20 | 0/5 |
+| Before | 4/10 | 2/5 | 2/5 | 1 | 2/20 | 1/5 |
+| After | 3/10 | 3/5 | 1/5 | 3 | 0/20 | 0/5 |
 
-- **Offers got tidier.** Rule breaks fell from 4 to 1: offers stopped carrying one-off details (the meeting time, the churn figures, the formula), and the closing proposal now picks up the kiln choice passed over earlier.
-- **Llama now offers too readily.** The wrap-up where the user had said no no longer repeats the declined item, but it offers the quiz question instead; the lookup and thinking-aloud turns still get offers. Staying quiet is the known weakness of this model (see the 0.1.0 row above).
-- **It copied the new example.** The lesson case offered "you'll review liability clauses before payment terms", so that phrase is now on the scorer's list of guide examples.
-- **Keep cases moved within noise for this model.** The two that flipped (`mixed-planning-meeting`, `pasted-api-key-safety`) failed on one extra proposal each.
-- A Claude run is still needed before drawing conclusions: `pnpm evals run --agent "cd /tmp && claude -p"` from a normal terminal.
+- **Llama offers more, and too readily.** It now makes offers mid-conversation that it used to leave out of its reply, which gains the lesson case, but it also offers on quiet turns: a one-off egg question, an unsettled offsite idea.
+- **Its offers are loose.** The closing proposal kept shelf details, and the preference offer ("simplify slides") didn't name the rule.
+- **Keep cases moved within noise for this model**, failing on one extra proposal each.
+- **No conclusion yet.** An 8B model struggles to stay quiet under any wording (see the 0.1.0 row above). A Claude run is needed: `pnpm evals run --agent "cd /tmp && claude -p"` from a normal terminal.
 
 ## The noise floor
 
