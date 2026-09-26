@@ -11,6 +11,20 @@ Results of running the cases against real agents. `evals/results/` is not commit
 
 Retrieval cases were added in 0.3.1, and both runs used the standing-instruction reminder (`--reminder`): **looked before answering 2/2** in both, and **searched for the right thing 2/2** once the expect rules stopped demanding wording a sensible query needn't use.
 
+## Offering when it comes up
+
+Offer cases were added after 0.3.2: ten turns where the agent should offer something mid-conversation, stay quiet, not repeat an offer that was passed over, or make one closing proposal. The offer is judged in the reply the user would see. Both runs used Llama 3.1 8B via Ollama at temperature 0 with a 12K context, because `claude -p` wasn't available. "Before" is the 0.3.2 wording, which only asked for a proposal at the end; "after" adds the triggers and the "How to offer" and "At the end of a conversation" sections.
+
+| Run | Offer cases passed | Offered at the right moment | Stayed quiet | Offers that broke a rule | Keep cases passed | Keep: stayed quiet |
+|---|---|---|---|---|---|---|
+| Before | 4/10 | 2/5 | 2/5 | 1 | 2/20 | 1/5 |
+| After | 3/10 | 3/5 | 1/5 | 3 | 0/20 | 0/5 |
+
+- **Llama offers more, and too readily.** It now makes offers mid-conversation that it used to leave out of its reply, which gains the lesson case, but it also offers on quiet turns: a one-off egg question, an unsettled offsite idea.
+- **Its offers are loose.** The closing proposal kept shelf details, and the preference offer ("simplify slides") didn't name the rule.
+- **Keep cases moved within noise for this model**, failing on one extra proposal each.
+- **No conclusion yet.** An 8B model struggles to stay quiet under any wording (see the 0.1.0 row above). A Claude run is needed: `pnpm evals run --agent "cd /tmp && claude -p"` from a normal terminal.
+
 ## The noise floor
 
 Three runs of the same configuration, same guide, scored 13, 14 and 17 out of 20. **Treat anything inside that range as noise.** A change is only worth believing if it moves the cases that fail every time, or moves the range as a whole across several runs.

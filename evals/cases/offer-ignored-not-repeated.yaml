@@ -1,0 +1,22 @@
+id: offer-ignored-not-repeated
+kind: offer
+category: offer-ignored
+summary: >-
+  The agent offered to save a preference, and the user ignored the offer and carried on. The next turn has
+  nothing new worth keeping, so the agent should answer and not repeat the offer.
+conversation:
+  - user: >-
+      Can you convert this bread recipe to grams? I only ever use metric in the recipes I publish on my blog,
+      never cups.
+  - assistant: >-
+      Here it is: 500 g strong white flour, 350 g water, 10 g salt, 7 g dried yeast.
+
+      Worth keeping: you publish recipes in metric only, never cups. Save it?
+  - user: Now scale it for two loaves.
+  - assistant: "For two loaves: 1,000 g flour, 700 g water, 20 g salt, 14 g dried yeast."
+  - user: Great. What oven temperature should I use in a fan oven?
+avoid:
+  - id: repeated-the-offer
+    match: [["metric", "cups", "grams"]]
+reference:
+  reply: Bake at about 200°C in a fan oven, for 30 to 35 minutes, until the loaves sound hollow when tapped underneath.

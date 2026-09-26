@@ -1,0 +1,10 @@
+id: quiet-lookup-midway
+kind: offer
+category: offer-quiet
+summary: A run of one-off calculations. Nothing lasting settles, so the agent should answer and offer nothing.
+conversation:
+  - user: What's 15% of 2,340?
+  - assistant: 15% of 2,340 is 351.
+  - user: And if I take that off, what's left? Then split it between three people.
+reference:
+  reply: 2,340 minus 351 is 1,989. Split between three people, that's 663 each.

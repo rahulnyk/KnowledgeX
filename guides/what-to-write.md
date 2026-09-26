@@ -2,6 +2,8 @@
 
 Decide what is worth keeping **before** you think about format. A small set of lasting notes beats a large pile of conversation leftovers, because every note has to be searched past and kept true for as long as it exists. A note is a promise, not a free asset.
 
+Offer to keep something when it comes up, not only at the end of a conversation. The details are clearest then, and the user can say yes in a word.
+
 ## The standard
 
 Keep only knowledge that lasts beyond three boundaries:
@@ -115,34 +117,62 @@ For each piece that passes the gates:
 6. **Nothing exists, and it is a distinct, nameable, reusable thing** → create a new note.
 7. **Otherwise** → fold it into the closest existing note, or skip it.
 
-## When to consider writing
+## When to offer
 
-Moments that usually contain something lasting:
+Offer on the turn where one of these happens. These are the triggers; a vague sense that something mattered is not.
 
-- a decision is made, especially one with trade-offs
-- the user corrects you or states a preference ("No, I always…")
-- a root cause is found, or something is learned the hard way
-- a commitment or deadline appears
-- a person, product, or organisation appears that will come up again
-- a plan or strategy settles
-- the user says "remember", "note this", or "save this"
+| Trigger | What it sounds like |
+|---|---|
+| **A choice is made** | The user picks an option or agrees to one: "let's go with", "we'll", "decided", "OK, do that" |
+| **A standing rule or preference** | "always", "never", "I prefer", "from now on", "that goes for every…" |
+| **A correction that holds beyond this task** | "No, we…", "actually, it's…", about how the user, their work, or their world is, not a slip in this draft |
+| **A cause is found, or a lesson learned the hard way** | The fix is known and it could happen again: "that's the third time", "next time I'll…" |
+| **A plan settles** | A goal with an approach, dates, or review points |
+| **A commitment or deadline** | "I'll send it by the 15th", "we owe them a reply next week", as a to-do in the related note |
+| **Someone or something that will come up again** | A person, company, product, or place, with their role and how the user relates to them |
 
-Moments that feel important but rarely are:
+When the user says "remember this", "note this", or "save this", don't offer: they already asked. Read the *write* guide and save it.
 
-- mid-debugging, before the cause is known
-- brainstorming that hasn't settled (unless the user wants ideas captured as `Idea` notes)
-- venting or thinking aloud
-- one-off lookups and general questions
+Don't offer, even when one of those words appears:
 
-## Proposing
+- **while it's still open:** debugging before the cause is known, options still being weighed ("maybe", "what if", "I'm not sure"), or brainstorming, unless the user wants ideas captured as `Idea` notes;
+- **for venting, thinking aloud, one-off lookups, or general questions;**
+- **for details of this task only,** such as this meeting's time, this draft's wording, or today's numbers;
+- **when it fails any of the five gates;**
+- **when you already know a note says the same thing.** Don't search just to decide whether to offer. Search before saving, and update the existing note instead of adding another;
+- **when you've already offered it** in this conversation, whether the user said no or just carried on.
 
-At the natural end of a substantial conversation, run the gates and offer a short list. Name what you would skip, so the user sees your judgment:
+## How to offer
 
-> Worth keeping: (1) **Decision**: … (2) **Preference**: … Skipping: … Save these?
+- **Answer first.** Do what the user asked, in full. The offer is the last line of your reply. Never put it first, never break into the answer with it, and never hold the answer back to ask.
+- **One line.** Name the thing in plain words, with its reason when there is one, then ask:
+
+  > Worth keeping: you review liability clauses before payment terms. Save it?
+
+- **Once per thing.** If the user ignores the offer, don't repeat it. If they say no, drop it for good.
+- **At most one offer per reply.** If two things settled at once, put both in the same line.
+- **Name the notebook** when there's more than one: "Save it to your Acme notebook?" If you aren't certain which, ask.
+- **Most turns have nothing worth keeping. Say nothing about saving on those.**
+
+## At the end of a conversation
+
+Conversations rarely say they are over. Treat it as the end when:
+
+- the user signs off: "thanks", "that's all", "that's everything", "bye", "done for today";
+- the work the conversation was about is finished and the user has accepted it: "perfect", "ship it", "sending it now";
+- the user asks what's worth keeping.
+
+At the end of a substantial conversation, one with several exchanges on one subject or where something settled, make one short proposal of everything still worth keeping: whatever you haven't offered yet, whatever the user passed over, and whatever only became clear late. Leave out anything they said no to or already saved. Name what you would skip when it helps the user see your judgment:
+
+> Before you go, worth keeping: (1) **Decision**: … (2) **Preference**: … I'd skip … Save these?
+
+If nothing is left, say nothing about saving.
+
+## One note or several
 
 **Prefer one note.** A conversation about a vendor, a purchase, or a piece of work usually produces one note, not a set. Someone mentioned in passing, such as the sales rep who signed the contract or the firm that did the work, belongs in a line of that note, not in a `Person` or `Entity` note of their own. Propose a second note only when it has its own name, would be searched for on its own, and has enough substance to stand up alone.
 
-Write only what the user approves. If nothing passes, offer nothing.
+Write only what the user approves.
 
 ## Example: a team conversation
 

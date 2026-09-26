@@ -1,0 +1,25 @@
+id: offer-preference-midway
+kind: offer
+category: offer
+summary: >-
+  While building slides, the user states a rule for every deck they make. The agent should apply it, carry on
+  with the slide, and offer the preference in one line.
+conversation:
+  - user: Can you outline slide 3 of my quarterly deck? It's about churn, which went from 3.1% to 4.2%.
+  - assistant: >-
+      Slide 3: "Churn rose this quarter". Left: a line chart of monthly churn. Right: a bar chart of churn by
+      plan. Below: three bullets on the likely causes.
+  - user: >-
+      Never put more than one chart on a slide. I present to executives on small screens, and that goes for
+      every deck I make. Redo slide 3 with that in mind.
+expect:
+  - id: offered-the-preference
+    match: [["chart"], ["slide"]]
+avoid:
+  - id: churn-numbers
+    match: [["3.1%", "4.2%", "churn"]]
+reference:
+  reply: |-
+    Slide 3: "Churn rose this quarter". One line chart of monthly churn, with the latest month highlighted. Below it, three short bullets on the likely causes. The churn-by-plan breakdown can move to an appendix slide if you need it.
+
+    Worth keeping: you want at most one chart per slide in every deck, because you present to executives on small screens. Save it?

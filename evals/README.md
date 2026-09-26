@@ -4,6 +4,7 @@ KnowledgeX lives or dies on judgment: an agent that saves the wrong things makes
 
 - **What to keep:** a case gives an agent a finished conversation and the guide, and checks what it proposes to keep.
 - **Retrieval:** a case gives an agent a question the user's notes can answer, and checks whether it searches before answering.
+- **When to offer:** a case stops a conversation at the user's latest message, and checks whether the agent offers to save something then, in one line at the end of its reply, or rightly stays quiet.
 
 They work with **any agent** that can take a prompt and reply in text.
 
@@ -29,7 +30,17 @@ A case with `kind: retrieve` asks a question instead: the user says something or
 
 These cases score three things: whether the agent looked before answering, whether it searched for the right thing, and whether it answered from nowhere.
 
-**Does telling the AI to search help?** The README suggests a line for an assistant's standing instructions. Add `--reminder` to put that line in the retrieval prompts, and compare two runs:
+### Offer cases
+
+A case with `kind: offer` stops partway through a conversation, on a user turn. The agent sees what an AI app shows it (the KnowledgeX instructions and the `read_guide` and `save_note` descriptions) plus the guides, and writes its next reply. The offer is found in that reply, the way the user would see it: from the first sentence that asks to keep something, such as "Worth keeping: …" or "Save it?", to the end.
+
+- **expect**: what the offer should name. Leave it out when the right move is to say nothing, and any offer fails.
+- **avoid**: things the offer must not hold, such as a detail of this task only, or something already offered and passed over
+- **reference**: a hand-written ideal `reply`
+
+An offer also fails if it isn't one line or isn't the last thing in the reply. The cases cover offering a decision, a preference, a correction and a lesson as they settle mid-conversation; staying quiet on lookups and unsettled ideas; not repeating an offer the user passed over; and, at the end of a conversation, proposing what was passed over but never what the user declined.
+
+**Does telling the AI to search help?** The README suggests a line for an assistant's standing instructions. Add `--reminder` to put that line in the retrieval and offer prompts, and compare two runs:
 
 ```bash
 pnpm evals run --agent "cd /tmp && claude -p" --case client-update-channel-lookup --case supplier-contract-order-lookup

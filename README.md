@@ -4,7 +4,7 @@
 
 What you know ends up scattered: in chat histories that disappear, in notes you never reread, and in your own head. AI assistants don't fix that. They start from nothing every conversation, or they save everything until the pile is too unreliable to use.
 
-KnowledgeX gives you both one library to work from. At the end of a conversation, your AI offers what's worth keeping, such as a decision and the reason for it, a preference, a lesson, or a person you work with, and saves only what you approve. Each note links to the ones it relates to, so the library grows into a knowledge graph of what you know, one conversation at a time.
+KnowledgeX gives you both one library to work from. When something worth keeping comes up, your AI offers to save it, such as a decision and the reason for it, a preference, a lesson, or a person you work with, and saves only what you approve. Each note links to the ones it relates to, so the library grows into a knowledge graph of what you know, one conversation at a time.
 
 It's plain markdown in a folder on your computer. Read, edit and rearrange it in any editor, such as Obsidian; your AI reads and writes the same files. When it answers from a note, it says which note, whether you confirmed it, and whether it might be out of date.
 
@@ -123,12 +123,12 @@ Any app that can run a local MCP server can use KnowledgeX with the command `npx
 
 ## Make it automatic
 
-After setup, KnowledgeX already works: the tools are there in every chat, your AI offers what's worth keeping at the end of a conversation, and "remember this" or "what did we decide about X?" always works.
+After setup, KnowledgeX already works: the tools are there in every chat, your AI offers to save what's worth keeping when it comes up, and "remember this" or "what did we decide about X?" always works.
 
-One habit is worth making explicit, because it's the quiet one. Unless your AI is told to, it may answer a question from the conversation alone and never look at your notes. Add this to your AI's standing instructions (in Claude Desktop, **Settings → Profile → personal preferences**, which applies to every chat):
+Two habits are worth making explicit. Unless your AI is told to, it may answer a question from the conversation alone and never look at your notes, and it may leave saving until the end, when details are easy to forget. Add this to your AI's standing instructions (in Claude Desktop, **Settings → Profile → personal preferences**, which applies to every chat):
 
 ```
-I use KnowledgeX as my knowledge library. Before answering anything that depends on my earlier decisions, preferences, people, plans or lessons, search my notes first. At the end of a substantial conversation, tell me what's worth keeping, and save only what I approve.
+I use KnowledgeX as my knowledge library. Search it when my past decisions or preferences matter, and offer to save anything worth keeping when it comes up. Save only what I approve.
 ```
 
 **Working on one client or project?** Notes can live in their own notebook. Name it in that project's instructions, such as a Claude Project or a `CLAUDE.md` or `AGENTS.md` file in a repository:
@@ -141,11 +141,15 @@ To go further and keep a connection to a single notebook, so nothing else is vis
 
 ## What using it looks like
 
-**Keeping something.** At the end of a useful conversation, your AI offers:
+**Keeping something.** When you settle something worth keeping, such as a decision, a preference, or a correction, your AI offers to save it, often in the middle of the conversation. It answers you first, then adds one line at the end of its reply:
 
-> I'd keep two things: your decision to review liability clauses before payment terms, and why; and that the client prefers updates by email, not calls. I'd skip the draft wording we went back and forth on. Save these?
+> Worth keeping: you review liability clauses before payment terms, because that's where the risk is. Save it?
 
-Say yes, "only the first", or no. If nothing is worth keeping, it won't ask. You can also just say _"remember this"_.
+Say yes or no, or just carry on; it won't ask about the same thing twice. When you wrap up, it may offer anything you skipped past in one short list:
+
+> Before you go, I'd keep two things: your contract review order, and that the client prefers updates by email, not calls. I'd skip the draft wording we went back and forth on. Save these?
+
+Most of the time nothing is worth keeping, and it says nothing. You can also just say _"remember this"_.
 
 **Asking later.**
 
