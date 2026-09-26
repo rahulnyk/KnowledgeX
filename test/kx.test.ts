@@ -10,7 +10,7 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import * as kb from "../src/bundle.js";
 import { main } from "../src/cli.js";
 import { createServer } from "../src/mcp.js";
-import { checkCases, loadCases, main as evalsMain, type Offer, promptFor, type Reply, scoreOffer, scoreRetrieve } from "../evals/run.js";
+import { checkCases, loadCases, main as evalsMain, offerStart, type Offer, promptFor, type Reply, scoreOffer, scoreRetrieve } from "../evals/run.js";
 
 const AGENT = "test-agent/1.0";
 
@@ -334,13 +334,21 @@ test("eval cases are valid", async () => {
   assert.ok(!promptFor(lookup).includes("standing instructions"));
   assert.ok(promptFor(lookup, true).includes("standing instructions"));
   assert.ok(!promptFor(lookup).includes("meridian-update-routine.md"), "the notes stay hidden: finding them is the test");
-  // Offer cases: the offer is the last line of the reply, and a quiet turn fails any offer at all.
+  // Offer cases are judged on the reply the user sees: the offer is its last line, and a quiet turn fails any offer at all.
   const due = loadCases(["offer-lesson-midway"])[0];
-  const offer = (due.reference as Offer).offer!;
-  assert.equal(scoreOffer(due, due.reference as Offer).passed, true);
-  assert.equal(scoreOffer(due, { reply: `${offer}\n\nUse =SUM(D2:D40).`, offer }).passed, false, "an offer before the answer interrupts it");
+  const reply = (due.reference as Offer).reply!;
+  assert.equal(scoreOffer(due, { reply }).passed, true);
+  const offer = reply.slice(offerStart(reply));
+  assert.equal(scoreOffer(due, { reply: `${offer}\n\nUse =SUM(D2:D40).` }).passed, false, "an offer before the answer interrupts it");
+  assert.equal(scoreOffer(due, { reply: "Use =SUM(D2:D40)." }).passed, false, "no offer");
+  const inline = "Use =SUM(D2:D40). Also, I'd keep that a filter left on is the first thing to check when the export is blank. Save this?";
+  assert.equal(scoreOffer(due, { reply: inline }).passed, true, "an offer at the end of the same paragraph counts");
+  const wrapUp = loadCases(["offer-at-wrap-up"])[0];
+  const skipping = "Glad to help! I'd keep one thing: you chose a 240V kiln over 3-phase, and you'll reconsider if a second potter joins. I'd skip the shelves and posts. Save this?";
+  assert.equal(scoreOffer(wrapUp, { reply: skipping }).passed, true, "naming what it would skip isn't keeping it");
   const quiet = loadCases(["offer-ignored-not-repeated"])[0];
-  assert.equal(scoreOffer(quiet, { reply: "About 200°C. Worth keeping: you publish in metric. Save it?", offer: "Worth keeping: you publish in metric. Save it?" }).passed, false);
+  assert.equal(scoreOffer(quiet, { reply: "About 200°C. Worth keeping: you publish in metric. Save it?" }).passed, false);
+  assert.equal(scoreOffer(quiet, { reply: "About 200°C, for 30 minutes." }).passed, true);
   assert.ok(promptFor(due).includes("save_note:"), "the agent sees what an AI app shows it");
   // pnpm passes the `--` from `pnpm run evals -- check` through to the script.
   const log = console.log;

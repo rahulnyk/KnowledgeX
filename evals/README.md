@@ -32,11 +32,11 @@ These cases score three things: whether the agent looked before answering, wheth
 
 ### Offer cases
 
-A case with `kind: offer` stops partway through a conversation, on a user turn. The agent sees what an AI app shows it (the KnowledgeX instructions and the `read_guide` and `save_note` descriptions) plus the guides, and writes its next reply. It answers with the whole reply and, separately, the part that offers to save something.
+A case with `kind: offer` stops partway through a conversation, on a user turn. The agent sees what an AI app shows it (the KnowledgeX instructions and the `read_guide` and `save_note` descriptions) plus the guides, and writes its next reply. The offer is found in that reply, the way the user would see it: from the first sentence that asks to keep something, such as "Worth keeping: …" or "Save it?", to the end.
 
 - **expect**: what the offer should name. Leave it out when the right move is to say nothing, and any offer fails.
 - **avoid**: things the offer must not hold, such as a detail of this task only, or something already offered and passed over
-- **reference**: a hand-written ideal `reply` and `offer`
+- **reference**: a hand-written ideal `reply`
 
 An offer also fails if it isn't one line or isn't the last thing in the reply. The cases cover offering a decision, a preference, a correction and a lesson as they settle mid-conversation; staying quiet on lookups and unsettled ideas; not repeating an offer the user passed over; and, at the end of a conversation, proposing what was passed over but never what the user declined.
 

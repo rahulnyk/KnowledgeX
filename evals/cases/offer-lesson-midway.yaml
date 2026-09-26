@@ -23,4 +23,3 @@ reference:
     Use =SUM(D2:D40). If a filter might be on, =SUBTOTAL(109, D2:D40) totals only the visible rows, so you can see when rows are hidden.
 
     Worth keeping: when the invoice export comes out blank, check for a filter left on first; it has happened three times. Save it?
-  offer: "Worth keeping: when the invoice export comes out blank, check for a filter left on first; it has happened three times. Save it?"

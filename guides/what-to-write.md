@@ -139,7 +139,7 @@ Don't offer, even when one of those words appears:
 - **for venting, thinking aloud, one-off lookups, or general questions;**
 - **for details of this task only,** such as this meeting's time, this draft's wording, or today's numbers;
 - **when it fails any of the five gates;**
-- **when a note already says the same thing;**
+- **when you already know a note says the same thing.** Don't search just to decide whether to offer. Search before saving, and update the existing note instead of adding another;
 - **when you've already offered it** in this conversation, whether the user said no or just carried on.
 
 ## How to offer
@@ -162,7 +162,7 @@ Conversations rarely say they are over. Treat it as the end when:
 - the work the conversation was about is finished and the user has accepted it: "perfect", "ship it", "sending it now";
 - the user asks what's worth keeping.
 
-At the end of a substantial conversation, one with several exchanges on one subject or where something settled, make one short proposal of what is still worth keeping: things you offered that the user passed over, and things that only became clear late. Leave out anything they said no to or already saved. Name what you would skip when it helps the user see your judgment:
+At the end of a substantial conversation, one with several exchanges on one subject or where something settled, make one short proposal of everything still worth keeping: whatever you haven't offered yet, whatever the user passed over, and whatever only became clear late. Leave out anything they said no to or already saved. Name what you would skip when it helps the user see your judgment:
 
 > Before you go, worth keeping: (1) **Decision**: … (2) **Preference**: … I'd skip … Save these?
 

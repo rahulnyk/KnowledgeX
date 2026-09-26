@@ -8,4 +8,3 @@ conversation:
   - user: And if I take that off, what's left? Then split it between three people.
 reference:
   reply: 2,340 minus 351 is 1,989. Split between three people, that's 663 each.
-  offer: ""

@@ -20,4 +20,3 @@ avoid:
     match: [["metric", "cups", "grams"]]
 reference:
   reply: Bake at about 200°C in a fan oven, for 30 to 35 minutes, until the loaves sound hollow when tapped underneath.
-  offer: ""

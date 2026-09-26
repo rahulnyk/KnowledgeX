@@ -23,4 +23,3 @@ avoid:
     match: [["could do better", "team name", "quiz team"]]
 reference:
   reply: You're welcome. Good luck at the quiz!
-  offer: ""

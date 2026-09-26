@@ -77,7 +77,7 @@ Here is the conversation so far. The user has just sent the last message, and it
 
 Write your next reply. Don't call any tools. Reply with only a JSON object and no other text, in this shape:
 
-{"reply": "<everything you would say to the user, in full>", "offer": "<the part of your reply that offers to save something, copied exactly, or an empty string if you would not offer anything>"}
+{"reply": "<everything you would say to the user, in full>"}
 `;
 
 const PROMPT = `You are an AI agent that uses KnowledgeX. Follow the guide below.
@@ -137,10 +137,9 @@ export interface Reply {
   answer?: string;
 }
 
-/** What an offer case's agent replies: its whole reply, and the part of it that offers to save something. */
+/** What an offer case's agent replies: everything it would say to the user. */
 export interface Offer {
   reply?: string;
-  offer?: string;
 }
 
 export const isRetrieve = (c: Case): boolean => c.kind === "retrieve";
@@ -275,18 +274,29 @@ export function scoreRetrieve(c: Case, reply: Reply = {}, error = ""): Result {
 export function parseOffer(text: string): Offer {
   const data = jsonOf(text) as Offer;
   if (typeof data?.reply !== "string") throw new Error("the response has no `reply`");
-  return { reply: data.reply, offer: typeof data.offer === "string" ? data.offer : "" };
+  return { reply: data.reply };
+}
+
+// Words that ask to keep something. The offer is judged in the reply the user would see, not in anything the agent says about it.
+// ponytail: a phrase list misses unusual wording and could catch an answer that says "save it"; add an LLM judge if that bites.
+const OFFER_CUE = /worth keeping(?! in mind)|\bI'd (keep|note|save)\b|\bsave (it|this|that|these|them)\b|\b(shall|should|can) I (save|note|keep|remember)\b|\bwant me to (save|note|keep|remember)\b/i;
+
+/** Where an offer starts in a reply: the first sentence that asks to keep something, or -1 when none does. */
+export function offerStart(reply: string): number {
+  for (const match of reply.matchAll(/[^.?!\n]+[.?!]*/g)) if (OFFER_CUE.test(match[0])) return match.index + match[0].search(/\S/);
+  return -1;
 }
 
 /**
- * Score an offer case. `expect` matches the offer the agent should make at this point; with no `expect`,
- * any offer fails. `avoid` matches things the offer must not contain, such as a repeated or transient item.
- * An offer must be one line, at the end of the reply, so it never gets in the way of the answer.
+ * Score an offer case from the reply. The offer runs from its first sentence to the end of the reply.
+ * `expect` matches what it should name; with no `expect`, any offer fails. `avoid` matches what it must not
+ * hold, such as a repeated or transient item. It must be one line and the last thing in the reply, so the answer comes first.
  */
 export function scoreOffer(c: Case, answer: Offer = {}, error = ""): Result {
   const said = String(answer.reply ?? "").trim();
-  const offer = String(answer.offer ?? "").trim();
-  const offered = offer !== "";
+  const start = offerStart(said);
+  const offered = start >= 0;
+  const offer = offered ? said.slice(start) : "";
   const required = (c.expect ?? []).map((kernel) => ({
     id: kernel.id,
     matched: offered && hits(kernel.match, offer),
@@ -295,12 +305,14 @@ export function scoreOffer(c: Case, answer: Offer = {}, error = ""): Result {
     completeness: 1,
     missingDetails: [] as string[],
   }));
-  const violations = (c.avoid ?? []).filter((rule) => offered && hits(rule.match, offer)).map((rule) => rule.id);
+  // Naming what it would skip is what the guide asks for, so avoid rules only look at what it would keep.
+  const kept = offer.replace(/\b(I'd |I would )?(skip|skipping|leave out|leaving out)\b[^.?!]*/gi, "");
+  const violations = (c.avoid ?? []).filter((rule) => offered && hits(rule.match, kept)).map((rule) => rule.id);
   if (offered) {
-    if (offer.includes("\n")) violations.push("offer-not-one-line");
-    // An offer left out of the reply text can't have interrupted it; one that is there must close it.
-    const tail = offer.split("\n").pop()!.slice(-40);
-    if (said.includes(tail) && !said.split("\n").pop()!.includes(tail)) violations.push("offer-not-at-end");
+    // The last sentence must still be asking; otherwise the answer carries on after the offer.
+    const last = [...said.matchAll(/[^.?!\n]+[.?!]*/g)].map((m) => m[0]).filter((t) => t.trim()).pop() ?? "";
+    if (!OFFER_CUE.test(last) && !/\?\s*["')*]*$/.test(last)) violations.push("offer-not-at-end");
+    else if (offer.includes("\n")) violations.push("offer-not-one-line");
     if (GUIDE_EXAMPLES.some((phrase) => offer.toLowerCase().includes(phrase))) violations.push("copied-guide-example");
   }
   const extras = offered && !required.length ? [offer] : [];
@@ -547,7 +559,7 @@ function checkOfferCase(c: Case): string[] {
   }
   if (Object.keys(turns.at(-1) ?? {})[0] !== "user") problems.push("the conversation must end with a user turn: the agent writes the next reply");
   const reference = c.reference as Offer;
-  if (typeof reference?.reply !== "string" || typeof reference?.offer !== "string") return [...problems, "an offer case's `reference` needs `reply` and `offer`"];
+  if (typeof reference?.reply !== "string") return [...problems, "an offer case's `reference` needs a `reply`"];
   const ids = new Set<string>();
   for (const section of ["expect", "avoid"] as const) {
     for (const kernel of c[section] ?? []) {
@@ -561,11 +573,11 @@ function checkOfferCase(c: Case): string[] {
   for (const phrase of GUIDE_EXAMPLES) if (text.includes(phrase)) problems.push(`reuses the guide's own example ("${phrase}"); write a fresh scenario`);
   const scored = scoreOffer(c, reference);
   if (!scored.passed) problems.push(`the reference reply fails:\n${report([scored], {}).trimEnd().split("\n").pop()}`);
-  // The opposite call must fail: staying quiet when an offer is due, or offering the user's own words when none is.
-  const opposite: Offer = (c.expect ?? []).length
-    ? { reply: reference.reply.replace(reference.offer, "").trim(), offer: "" }
-    : { reply: `${reference.reply}\n${String(Object.values(turns.at(-1) ?? {})[0] ?? "").replace(/\s+/g, " ")} Save it?`, offer: `${String(Object.values(turns.at(-1) ?? {})[0] ?? "").replace(/\s+/g, " ")} Save it?` };
-  if (scoreOffer(c, opposite).passed) problems.push("the opposite call passes this case; tighten it");
+  // When an offer is due, the same reply without it must fail. (With none due, any offer already fails.)
+  const start = offerStart(reference.reply);
+  if ((c.expect ?? []).length && start >= 0 && scoreOffer(c, { reply: reference.reply.slice(0, start) }).passed) {
+    problems.push("the reply without its offer passes this case; tighten it");
+  }
   return problems;
 }
 

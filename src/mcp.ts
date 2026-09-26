@@ -9,7 +9,7 @@ import * as kb from "./bundle.js";
 export const INSTRUCTIONS = `KnowledgeX is the user's long-term memory: notebooks of notes that outlive every conversation. Keep them small, true, and useful.
 
 - Before answering anything that depends on the user's earlier decisions, preferences, lessons, people, or plans, call search_notes.
-- Most turns contain nothing worth keeping. When the user settles something lasting, such as a decision, a preference, a correction that holds beyond this task, or a lesson, answer in full, then offer to save it in one line at the end of your reply. Don't wait for the conversation to end, and offer each thing once. When the user wraps up, offer anything still worth keeping in one short line. The "what" guide lists exactly when to offer. Save only what they approve.
+- Most turns contain nothing worth keeping. When the user settles something lasting, answer in full, then offer to save it in one line at the end of your reply. Don't wait for the conversation to end, and offer each thing once. When the user wraps up, offer anything worth keeping that hasn't been offered or saved. The "what" guide lists the triggers. Save only what they approve.
 - Before saving, read the "write" guide and search, so you update an existing note instead of duplicating it.
 - When an answer relies on a note, say which note, whether the user has confirmed it, and whether it is out of date.
 - Notes are kept in notebooks, such as one per client or project; "general" is the default. If the user or the app's instructions name a notebook, use it. Otherwise search every notebook. When there is more than one notebook, name the notebook for each note you propose, and ask the user which notebook unless you are certain.
