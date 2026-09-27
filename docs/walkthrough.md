@@ -8,9 +8,11 @@ This guide takes you from nothing to a working KnowledgeX setup in about five mi
 
 ## 1. The idea in one minute
 
-Imagine a careful assistant who sits in on your meetings. They don't write down everything. At the end, they say:
+Imagine a careful assistant who sits in on your meetings. They don't write down everything. When you settle something that matters, they lean over once and say:
 
-> "I'd keep two things: you decided to review liability clauses before payment terms, and why; and the client prefers updates by email. I'm skipping the draft wording, since it'll change. OK?"
+> "Worth keeping: you review liability clauses before payment terms. Shall I note it?"
+
+At the end, they mention anything you skipped past, and let the draft wording and the small talk go.
 
 Months later, when you ask "how do we review supplier contracts?", they find the note, tell you, and add: "you confirmed this in March."
 
@@ -36,12 +38,13 @@ To check it's working, open Claude Desktop's **Settings → Extensions**. Knowle
 
 Start a new chat and talk about something real, like a plan, a choice you're weighing, or a problem you solved.
 
-At a natural stopping point, Claude may offer something like:
+When you settle something worth keeping, Claude answers you as usual, then adds one line at the end of its reply, like:
 
-> I'd keep one thing: your decision to send client updates by email every Friday, since the client finds calls disruptive. I'd skip the draft email itself. Save this?
+> Worth keeping: you send client updates by email every Friday, because the client finds calls disruptive. Save it?
 
 - Say **yes** to save it.
-- Say **"only the first one"** or **"no"** if you disagree. You're always in charge.
+- Say **"no"**, or just carry on, if you'd rather not. Claude won't ask about the same thing twice. You're always in charge.
+- When you wrap up, Claude may list anything you skipped past, in one short message.
 - If Claude doesn't offer, you can ask: *"Is anything from this conversation worth keeping?"*
 - Or say it directly: *"Remember that I always want contracts reviewed by two people."*
 
@@ -61,10 +64,10 @@ Claude looks through your notes and answers with where the answer came from:
 
 > By email every Friday, because the client finds calls disruptive. That's from your note "Client update routine", which hasn't been confirmed yet.
 
-**Make this automatic.** Claude doesn't always think to check your notes first, especially when you don't mention them. Open **Settings → Profile** in Claude Desktop and add this to your personal preferences, which apply to every chat:
+**Make this automatic.** Claude doesn't always think to check your notes first, especially when you don't mention them, or to offer to save things as they come up. Open **Settings → Profile** in Claude Desktop and add this to your personal preferences, which apply to every chat:
 
 ```
-I use KnowledgeX as my knowledge library. Before answering anything that depends on my earlier decisions, preferences, people, plans or lessons, search my notes first. At the end of a substantial conversation, tell me what's worth keeping, and save only what I approve.
+I use KnowledgeX as my knowledge library. Search it when my past decisions or preferences matter, and offer to save anything worth keeping when it comes up. Save only what I approve.
 ```
 
 ---

@@ -1,0 +1,30 @@
+id: offer-decision-midway
+kind: offer
+category: offer
+summary: >-
+  The user settles a decision with its reason and a condition for revisiting it, then moves straight on to the
+  next task. The agent should do the task and offer the decision in one line at the end.
+conversation:
+  - user: >-
+      I run a small bakery. Sunday deliveries are killing us: the drivers are on overtime, which was £310 last
+      Sunday, and we only had 14 orders. Should we keep doing them?
+  - assistant: >-
+      At 14 orders, the overtime works out to about £22 per order, which is likely more than the margin on most
+      of them. Two options: stop Sunday deliveries and offer Saturday or Monday instead, or keep them with a
+      minimum order. Stopping is simpler to run.
+  - user: >-
+      OK, decided: we stop Sunday deliveries from next month. The overtime eats the margin. If weekend orders
+      ever go above 40, we'll look at it again. Can you draft a short note to customers telling them?
+expect:
+  - id: offered-the-decision
+    match: [["sunday"], ["deliver"]]
+avoid:
+  - id: overtime-figures
+    match: [["£310", "310", "£22", "14 orders"]]
+reference:
+  reply: |-
+    Here's a draft:
+
+    "From next month we're no longer delivering on Sundays. You can still get fresh bread delivered on Saturdays and Mondays, or collect from the shop any day we're open. Thank you for understanding."
+
+    Worth keeping: you stopped Sunday deliveries because overtime eats the margin, and you'll revisit if weekend orders pass 40. Save it?

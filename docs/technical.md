@@ -112,7 +112,8 @@ kx install-skill ~/.claude/skills
 ## Long-term knowledge (KnowledgeX)
 Durable knowledge is kept in KnowledgeX notebooks, managed with the `kx` command.
 - Before answering questions that depend on earlier decisions, preferences, lessons, people, or plans, run `kx search <words>` (add `--notebook NAME` for a notebook other than general).
-- Before saving anything, and at the end of substantial conversations, run `kx guide` and follow it.
+- When a decision, preference, correction, or lesson worth keeping comes up, offer to save it in one line at the end of your reply, not only when the conversation ends. Save only what the user approves.
+- Run `kx guide what` once per conversation before you first offer, and `kx guide write` before saving, and follow them.
 ```
 
 **Chat apps with no MCP or shell access.** Paste the output of `kx guide all` into the app's custom instructions. The AI will follow the rules, but it can't read or write your notes folder directly.

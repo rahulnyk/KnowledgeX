@@ -1,0 +1,18 @@
+id: quiet-thinking-aloud
+kind: offer
+category: offer-quiet
+summary: >-
+  The user is weighing options out loud and hasn't settled anything. The agent should help them think, and not
+  offer to save an unsettled idea.
+conversation:
+  - user: >-
+      I'm thinking about where to take the team for our autumn offsite. Maybe Lisbon, maybe Porto. Or somewhere
+      we can drive to, like the Lake District.
+  - assistant: >-
+      All three can work. Lisbon and Porto need flights but give you better weather; the Lake District keeps
+      travel simple and costs down.
+  - user: I don't know. Porto maybe? Or is that silly for twelve people? What's the weather usually like there in October?
+reference:
+  reply: >-
+    Not silly at all: Porto is compact and easy for a group of twelve. In October it's usually mild, around
+    17 to 22°C in the day, with some rainy days, so plan at least one indoor activity.

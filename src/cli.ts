@@ -27,7 +27,7 @@ const TEMPLATES: Record<string, string> = {
 };
 const SKILL_HEADER = `---
 name: knowledgex
-description: Long-term memory with judgment. Use when the user wants to save, remember, or note something; when recalling earlier decisions, preferences, lessons, people, or plans; before answering questions that depend on what was decided or learned before; and at the end of substantial conversations to propose what is worth keeping. Notes live in notebooks (Open Knowledge Format bundles) managed with the \`kx\` command.
+description: Long-term memory with judgment. Use when the user wants to save, remember, or note something; when recalling earlier decisions, preferences, lessons, people, or plans; before answering questions that depend on what was decided or learned before; and when the user settles a decision, preference, correction, or lesson worth keeping, to offer to save it in one line. Notes live in notebooks (Open Knowledge Format bundles) managed with the \`kx\` command.
 ---
 
 `;
