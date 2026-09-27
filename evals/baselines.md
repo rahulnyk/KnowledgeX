@@ -4,6 +4,7 @@ Results of running the cases against real agents. `evals/results/` is not commit
 
 | Date | Agent | Guide | Cases passed | Recall | Precision | Stayed quiet | Transient leaks |
 |---|---|---|---|---|---|---|---|
+| 2026-09-26 | Claude Code, `claude -p` | 0.3.2 + offer-when-it-comes-up | 13/20 (65%) | 16/16 (100%) | 18/18 (100%) | 5/5 (100%) | 5 in 5 cases |
 | 2026-09-21 | Claude Code (Sonnet 4.6), `claude -p`, three runs | 0.3.1 + tuned guide | 13, 14, 17 of 20 | 100% | 86-95% | 5/5 (100%) | 2-5 leaks |
 | 2026-09-21 | Claude Code (Sonnet 4.6), `claude -p` | 0.3.1 + tuned "what to write" | 13/20 (65%) | 16/16 (100%) | 18/21 (86%) | 5/5 (100%) | 5 in 5 cases |
 | 2026-09-21 | Claude Code (Sonnet 4.6), `claude -p` | 0.3.1 | 13/20 (65%) | 16/16 (100%) | 17/18 (94%) | 5/5 (100%) | 7 in 6 cases |
@@ -19,11 +20,14 @@ Offer cases were added after 0.3.2: ten turns where the agent should offer somet
 |---|---|---|---|---|---|---|
 | Before | 4/10 | 2/5 | 2/5 | 1 | 2/20 | 1/5 |
 | After | 3/10 | 3/5 | 1/5 | 3 | 0/20 | 0/5 |
+| After, Claude Code (`claude -p`) | 9/10 | 5/5 | 5/5 | 1 | 13/20 | 5/5 |
 
 - **Llama offers more, and too readily.** It now makes offers mid-conversation that it used to leave out of its reply, which gains the lesson case, but it also offers on quiet turns: a one-off egg question, an unsettled offsite idea.
 - **Its offers are loose.** The closing proposal kept shelf details, and the preference offer ("simplify slides") didn't name the rule.
 - **Keep cases moved within noise for this model**, failing on one extra proposal each.
-- **No conclusion yet.** An 8B model struggles to stay quiet under any wording (see the 0.1.0 row above). A Claude run is needed: `pnpm evals run --agent "cd /tmp && claude -p"` from a normal terminal.
+- **Claude follows the new wording closely.** It offered at every settled turn, in one line after the answer; stayed quiet on lookups, unsettled ideas, and a plain goodbye; didn't repeat a passed-over offer; and didn't raise one the user had declined. Its one failure is the closing proposal, which carried the wiring quote and the shelf setup along with the kiln decision.
+- **Keep cases didn't regress on Claude:** 13/20, inside the 13-17 range of earlier runs, with the same recurring faults.
+- There is no Claude run of the offer cases on the 0.3.2 wording, so the gain on Claude is inferred, not measured.
 
 ## The noise floor
 
