@@ -66,7 +66,7 @@ The guides name operations. Use whichever interface you have:
 
 Offer when it comes up, not only at the end. When the user settles something lasting, answer in full, then add one line at the end of your reply offering to save it. Offer each thing once. The *what to write* guide lists the triggers, and when to stay quiet.
 
-When the user wraps up a substantial conversation, offer everything still worth keeping that hasn't been offered or saved, in one short proposal:
+When the user wraps up a substantial conversation, offer everything still worth keeping that the user hasn't saved or said no to, including offers they passed over, in one short proposal:
 
 > I'd keep two things: (1) your decision to use PostgreSQL for the job queue, and when you'd revisit it; (2) the lesson to benchmark on production-like machines. I'd skip the laptop benchmark numbers and the setup troubleshooting. Save these?
 
