@@ -27,6 +27,7 @@ Offer cases were added after 0.3.2: ten turns where the agent should offer somet
 - **Keep cases moved within noise for this model**, failing on one extra proposal each.
 - **Claude follows the new wording closely.** It offered at every settled turn, in one line after the answer; stayed quiet on lookups, unsettled ideas, and a plain goodbye; didn't repeat a passed-over offer; and didn't raise one the user had declined. Its one failure is the closing proposal, which carried the wiring quote and the shelf setup along with the kiln decision.
 - **Keep cases didn't regress on Claude:** 13/20, inside the 13-17 range of earlier runs, with the same recurring faults.
+- **Two follow-up fixes, checked on Claude.** Offers now name the thing and its reason, not prices or what was bought along the way. And every part of the guide now agrees that an offer the user passed over waits for the closing proposal, while one they declined is dropped. Before that, Claude followed one rule or the other from run to run: the closing proposal first carried the price and the shelves, then said nothing at all. After both fixes, the five mid-conversation cases and the three cases about earlier offers all passed, one run each. The closing proposal named only the kiln decision, its reason, and when to revisit it.
 - There is no Claude run of the offer cases on the 0.3.2 wording, so the gain on Claude is inferred, not measured.
 
 ## The noise floor
