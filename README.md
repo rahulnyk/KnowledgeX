@@ -1,5 +1,7 @@
 # KnowledgeX
 
+[![M8ven Score](https://m8ven.ai/badge/mcp/rahulnyk/knowledgex)](https://m8ven.ai/mcp/rahulnyk/knowledgex?s=readme)
+
 **A personal knowledge library you and your AI build together.**
 
 What you know ends up scattered: in chat histories that disappear, in notes you never reread, and in your own head. AI assistants don't fix that. They start from nothing every conversation, or they save everything until the pile is too unreliable to use.
