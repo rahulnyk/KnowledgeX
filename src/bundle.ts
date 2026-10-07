@@ -83,11 +83,25 @@ export function writeNote(note: Note, keepEdit = false): void {
   saveNote(note.path, `---\n${front}---\n${note.body}`, keepEdit);
 }
 
-/** The file names of the notes in a bundle. Bundles are flat, so only the top level is read. */
-function noteFiles(root: string): string[] {
-  return readdirSync(root, { withFileTypes: true })
-    .filter((entry) => entry.isFile() && entry.name.endsWith(".md") && !entry.name.startsWith(".") && !RESERVED.has(entry.name))
-    .map((entry) => entry.name)
+/**
+ * Bundle-relative paths of the notes in a bundle. KnowledgeX writes flat notebooks, but OKF lets a bundle
+ * group notes in subfolders, so the whole tree is read, skipping hidden entries and `index.md`/`log.md` at every level.
+ */
+function noteFiles(root: string, dir = ""): string[] {
+  let entries;
+  try {
+    entries = readdirSync(join(root, dir), { withFileTypes: true });
+  } catch (error) {
+    if (!dir) throw error;
+    return []; // an unreadable subfolder can't break the bundle
+  }
+  return entries
+    .flatMap((entry) => {
+      if (entry.name.startsWith(".")) return [];
+      const path = dir ? `${dir}/${entry.name}` : entry.name;
+      if (entry.isDirectory()) return noteFiles(root, path);
+      return entry.isFile() && entry.name.endsWith(".md") && !RESERVED.has(entry.name) ? [path] : [];
+    })
     .sort();
 }
 
@@ -795,12 +809,13 @@ const digest = (text: string): string =>
 
 /** Write a note's file and remember its fingerprint, together, so another process never takes the write for the user's edit. */
 function saveNote(path: string, text: string, keepEdit: boolean): void {
-  const root = dirname(resolve(path));
+  let root = dirname(resolve(path));
+  while (!isBundle(root) && dirname(root) !== root) root = dirname(root); // a note may sit in a subfolder of its bundle
   const library = libraryOf(root);
   if (!library) return writeFileSync(path, text, "utf8");
   withState(library, (state) => {
     const record = (state.notebooks[basename(root)] ??= {});
-    const file = basename(path);
+    const file = rel(path, root);
     // A change the user made since the notebook was last looked at is recorded before this write replaces it.
     const known = record.content?.[file];
     if ((known || record.tracked) && existsSync(path) && digest(readFileSync(path, "utf8")) !== known) {

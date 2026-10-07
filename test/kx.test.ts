@@ -72,7 +72,7 @@ test("regressions from code review", (t) => {
   kb.createNote(root, { type: "Lesson", title: "契約レビューの順序", description: "d", body: "x", by: AGENT });
   kb.createNote(root, { type: "Lesson", title: "顧客への連絡方法", description: "d", body: "y", by: AGENT });
 
-  // Only the top level is read, so an unreadable or unrelated subfolder can't break the bundle.
+  // An unreadable subfolder can't break the bundle.
   mkdirSync(join(root, "private"), { mode: 0o000 });
   try {
     assert.equal(kb.loadNotes(root).length, 3);
@@ -80,6 +80,18 @@ test("regressions from code review", (t) => {
   } finally {
     chmodSync(join(root, "private"), 0o755);
   }
+
+  // OKF bundles may group notes in subfolders: they are found, with index.md and log.md skipped at every level.
+  mkdirSync(join(root, "team", "people"), { recursive: true });
+  cpSync(join(root, "style.md"), join(root, "team", "people", "nested-style.md"));
+  writeFileSync(join(root, "team", "index.md"), "# Team\n");
+  writeFileSync(join(root, "team", "log.md"), "# Log\n");
+  assert.deepEqual(
+    kb.loadNotes(root).map((n) => kb.rel(n.path, root)).filter((p) => p.includes("/")),
+    ["team/people/nested-style.md"],
+  );
+  assert.match(kx("search", "--all", "--bundle", root).out, /nested-style/);
+  rmSync(join(root, "team"), { recursive: true });
 
   // Built-in object keys are not note types or guide topics.
   assert.equal(kb.isType("constructor"), false);
