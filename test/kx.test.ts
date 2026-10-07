@@ -72,7 +72,7 @@ test("regressions from code review", (t) => {
   kb.createNote(root, { type: "Lesson", title: "契約レビューの順序", description: "d", body: "x", by: AGENT });
   kb.createNote(root, { type: "Lesson", title: "顧客への連絡方法", description: "d", body: "y", by: AGENT });
 
-  // Only the top level is read, so an unreadable or unrelated subfolder can't break the bundle.
+  // An unreadable subfolder can't break the bundle.
   mkdirSync(join(root, "private"), { mode: 0o000 });
   try {
     assert.equal(kb.loadNotes(root).length, 3);
@@ -81,10 +81,52 @@ test("regressions from code review", (t) => {
     chmodSync(join(root, "private"), 0o755);
   }
 
+
   // Built-in object keys are not note types or guide topics.
   assert.equal(kb.isType("constructor"), false);
   kb.createNote(root, { type: "constructor", title: "Proto", description: "d", body: "x", by: AGENT });
   assert.equal(kx("guide", "constructor").code, 1);
+});
+
+test("OKF bundles made elsewhere, with notes in subfolders (#22)", (t) => {
+  // Like the bundle in the issue: concepts grouped in folders, each folder with its own index.md and log.md.
+  const root = join(tempDir(t), "elsewhere");
+  kb.ensureBundle(root);
+  const made = [
+    ["concepts", "Concept", "Payment service"],
+    ["concepts", "Concept", "Orders table"],
+    ["people", "Person", "Jane Doe"],
+  ].map(([folder, type, title]) => {
+    const note = kb.createNote(root, { type, title, description: `About ${title}`, body: "x\n", by: AGENT });
+    mkdirSync(join(root, folder), { recursive: true });
+    const path = join(root, folder, basename(note.path));
+    renameSync(note.path, path);
+    writeFileSync(join(root, folder, "index.md"), `# ${folder}\n`);
+    writeFileSync(join(root, folder, "log.md"), `# ${folder} log\n`);
+    return `${folder}/${basename(path)}`;
+  });
+  mkdirSync(join(root, ".obsidian"));
+  writeFileSync(join(root, ".obsidian", "hidden.md"), "not a note");
+  // A wikilink from a nested note to a note in the same folder, as Obsidian writes it.
+  writeFileSync(
+    join(root, "concepts", "orders-table.md"),
+    readFileSync(join(root, "concepts", "orders-table.md"), "utf8") + "Read by [[payment-service]].\n",
+  );
+  kx("index", "--bundle", root);
+
+  assert.deepEqual(kb.loadNotes(root).map((note) => kb.rel(note.path, root)), [...made].sort());
+  const checked = kx("check", "--bundle", root);
+  assert.equal(checked.code, 0);
+  assert.doesNotMatch(checked.out, /broken link/);
+  const found = kx("search", "--all", "--bundle", root).out;
+  for (const path of made) assert.match(found, new RegExp(path));
+  assert.match(kx("review", "--bundle", root).out, /people\/jane-doe\.md/);
+  assert.match(kx("search", "payment", "--bundle", root).out, /concepts\/payment-service\.md/);
+
+  // Changing a nested note leaves it where it is.
+  kb.verifyNote(root, kb.openNote(root, "people/jane-doe.md"), "human:alex");
+  assert.equal(kb.trust(kb.openNote(root, "people/jane-doe.md").meta), "human-reviewed");
+  assert.equal(existsSync(join(root, "jane-doe.md")), false);
 });
 
 test("notes edited in another editor, and wikilinks", (t) => {
@@ -442,7 +484,14 @@ test("MCP server", async (t) => {
 
   assert.ok(existsSync(join(root, "index.md")), "the notes folder is created on first run");
   assert.match(client.getInstructions() ?? "", /long-term memory/);
-  const tools = (await client.listTools()).tools.map((tool) => tool.name).sort();
+  const listed = (await client.listTools()).tools;
+  const tools = listed.map((tool) => tool.name).sort();
+  // Every tool declares all four hints, as directories such as OpenAI's require.
+  for (const tool of listed) {
+    for (const hint of ["readOnlyHint", "destructiveHint", "idempotentHint", "openWorldHint"] as const) {
+      assert.equal(typeof tool.annotations?.[hint], "boolean", `${tool.name} is missing ${hint}`);
+    }
+  }
   assert.deepEqual(tools, ["check_up", "confirm_note", "link_notes", "list_notebooks", "read_guide", "read_note", "save_note", "search_notes", "update_note"]);
   assert.match((await call("read_guide", { topic: "what" })).text, /five gates/i);
 

@@ -5,7 +5,7 @@ Notes follow the [Open Knowledge Format (OKF) v0.2](https://github.com/GoogleClo
 ## The notebook
 
 - **A library holds notebooks.** The library folder has one subfolder per notebook, a generated `index.md` listing them, and `.knowledgex.json`, which records confirmations made in the library. Don't edit either file by hand.
-- **Each notebook is one flat folder.** No subfolders.
+- **Each notebook is one flat folder.** Never create subfolders. A bundle made by another tool may group notes in subfolders; those notes are read like any other, and stay where they are.
 - **`index.md`** lists every note by type. It is generated; `kx` rebuilds it after each change.
 - **`log.md`** is a dated changelog, newest first. `kx` commands add to it.
 - **Every other `.md` file is a note.**

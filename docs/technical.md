@@ -144,7 +144,7 @@ Durable knowledge is kept in KnowledgeX notebooks, managed with the `kx` command
 **Options that apply to most commands**
 
 - **`--notebook NAME`** picks the notebook to work on. The default is `KX_NOTEBOOK`, then `general`. The library comes from `KX_BUNDLE`, then from `kx init`, which saves it in `~/.config/knowledgex/config.json` (or under `$XDG_CONFIG_HOME`).
-- **`--bundle FOLDER`** works on any OKF bundle directly, inside a library or not.
+- **`--bundle FOLDER`** works on any OKF bundle directly, inside a library or not. Notes in subfolders are read too, as OKF allows; KnowledgeX itself keeps notebooks flat.
 - **`--by ID`** says who is acting:
     - `<agent>/<model>` for an AI agent, for example `claude-code/claude-opus-5`;
     - `human:<name>` for a person, for example `human:alex`;
