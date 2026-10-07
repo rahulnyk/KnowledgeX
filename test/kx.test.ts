@@ -442,7 +442,14 @@ test("MCP server", async (t) => {
 
   assert.ok(existsSync(join(root, "index.md")), "the notes folder is created on first run");
   assert.match(client.getInstructions() ?? "", /long-term memory/);
-  const tools = (await client.listTools()).tools.map((tool) => tool.name).sort();
+  const listed = (await client.listTools()).tools;
+  const tools = listed.map((tool) => tool.name).sort();
+  // Every tool declares all four hints, as directories such as OpenAI's require.
+  for (const tool of listed) {
+    for (const hint of ["readOnlyHint", "destructiveHint", "idempotentHint", "openWorldHint"] as const) {
+      assert.equal(typeof tool.annotations?.[hint], "boolean", `${tool.name} is missing ${hint}`);
+    }
+  }
   assert.deepEqual(tools, ["check_up", "confirm_note", "link_notes", "list_notebooks", "read_guide", "read_note", "save_note", "search_notes", "update_note"]);
   assert.match((await call("read_guide", { topic: "what" })).text, /five gates/i);
 
