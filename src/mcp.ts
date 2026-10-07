@@ -101,7 +101,7 @@ export function createServer(library: string, user: string, notebook?: string): 
       title: "Read the KnowledgeX guide",
       description: READ_GUIDE,
       inputSchema: { topic: guideTopic },
-      annotations: { readOnlyHint: true, openWorldHint: false },
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
     tool(({ topic }: { topic: z.infer<typeof guideTopic> }) => kb.guideText(topic)),
   );
@@ -118,7 +118,7 @@ export function createServer(library: string, user: string, notebook?: string): 
         type: noteType.optional().describe("Only notes of this type"),
         include_replaced: z.boolean().optional().describe("Also show notes that were replaced or retired"),
       },
-      annotations: { readOnlyHint: true, openWorldHint: false },
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
     tool(({ query, notebook: only, type, include_replaced }: { query?: string; notebook?: string; type?: string; include_replaced?: boolean }) => {
       const names = notebooks();
@@ -139,7 +139,7 @@ export function createServer(library: string, user: string, notebook?: string): 
       title: "Read a note",
       description: "Read one note in full: its content, sources, and history of checks.",
       inputSchema: { file: z.string().min(1).describe("The note as shown by search_notes, like general/my-note.md") },
-      annotations: { readOnlyHint: true, openWorldHint: false },
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
     tool(({ file }: { file: string }) => {
       const { root, note } = find(file);
@@ -263,7 +263,7 @@ export function createServer(library: string, user: string, notebook?: string): 
       description:
         "List notes that need attention: out of date, changed since they were checked, conflicting, drafts, never checked, or badly formatted. Read the 'maintain' guide before acting on the results, and propose fixes to the user before making them.",
       inputSchema: {},
-      annotations: { readOnlyHint: true, openWorldHint: false },
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
     tool(() => {
       const reports = notebooks().flatMap((name) => {
@@ -284,7 +284,7 @@ export function createServer(library: string, user: string, notebook?: string): 
       description:
         "List the user's notebooks: separate collections of notes, such as one per client or project. Each shows how many notes it has, their main types, and whether it was received from someone else. Confirmations don't travel with copies: notes in a received notebook count as unconfirmed until the user confirms them here.",
       inputSchema: {},
-      annotations: { readOnlyHint: true, openWorldHint: false },
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
     tool(() => notebooks().map((name) => `${name}: ${kb.notebookSummary(library, name)}`).join("\n")),
   );
