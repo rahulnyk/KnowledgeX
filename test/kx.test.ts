@@ -81,22 +81,52 @@ test("regressions from code review", (t) => {
     chmodSync(join(root, "private"), 0o755);
   }
 
-  // OKF bundles may group notes in subfolders: they are found, with index.md and log.md skipped at every level.
-  mkdirSync(join(root, "team", "people"), { recursive: true });
-  cpSync(join(root, "style.md"), join(root, "team", "people", "nested-style.md"));
-  writeFileSync(join(root, "team", "index.md"), "# Team\n");
-  writeFileSync(join(root, "team", "log.md"), "# Log\n");
-  assert.deepEqual(
-    kb.loadNotes(root).map((n) => kb.rel(n.path, root)).filter((p) => p.includes("/")),
-    ["team/people/nested-style.md"],
-  );
-  assert.match(kx("search", "--all", "--bundle", root).out, /nested-style/);
-  rmSync(join(root, "team"), { recursive: true });
 
   // Built-in object keys are not note types or guide topics.
   assert.equal(kb.isType("constructor"), false);
   kb.createNote(root, { type: "constructor", title: "Proto", description: "d", body: "x", by: AGENT });
   assert.equal(kx("guide", "constructor").code, 1);
+});
+
+test("OKF bundles made elsewhere, with notes in subfolders (#22)", (t) => {
+  // Like the bundle in the issue: concepts grouped in folders, each folder with its own index.md and log.md.
+  const root = join(tempDir(t), "elsewhere");
+  kb.ensureBundle(root);
+  const made = [
+    ["concepts", "Concept", "Payment service"],
+    ["concepts", "Concept", "Orders table"],
+    ["people", "Person", "Jane Doe"],
+  ].map(([folder, type, title]) => {
+    const note = kb.createNote(root, { type, title, description: `About ${title}`, body: "x\n", by: AGENT });
+    mkdirSync(join(root, folder), { recursive: true });
+    const path = join(root, folder, basename(note.path));
+    renameSync(note.path, path);
+    writeFileSync(join(root, folder, "index.md"), `# ${folder}\n`);
+    writeFileSync(join(root, folder, "log.md"), `# ${folder} log\n`);
+    return `${folder}/${basename(path)}`;
+  });
+  mkdirSync(join(root, ".obsidian"));
+  writeFileSync(join(root, ".obsidian", "hidden.md"), "not a note");
+  // A wikilink from a nested note to a note in the same folder, as Obsidian writes it.
+  writeFileSync(
+    join(root, "concepts", "orders-table.md"),
+    readFileSync(join(root, "concepts", "orders-table.md"), "utf8") + "Read by [[payment-service]].\n",
+  );
+  kx("index", "--bundle", root);
+
+  assert.deepEqual(kb.loadNotes(root).map((note) => kb.rel(note.path, root)), [...made].sort());
+  const checked = kx("check", "--bundle", root);
+  assert.equal(checked.code, 0);
+  assert.doesNotMatch(checked.out, /broken link/);
+  const found = kx("search", "--all", "--bundle", root).out;
+  for (const path of made) assert.match(found, new RegExp(path));
+  assert.match(kx("review", "--bundle", root).out, /people\/jane-doe\.md/);
+  assert.match(kx("search", "payment", "--bundle", root).out, /concepts\/payment-service\.md/);
+
+  // Changing a nested note leaves it where it is.
+  kb.verifyNote(root, kb.openNote(root, "people/jane-doe.md"), "human:alex");
+  assert.equal(kb.trust(kb.openNote(root, "people/jane-doe.md").meta), "human-reviewed");
+  assert.equal(existsSync(join(root, "jane-doe.md")), false);
 });
 
 test("notes edited in another editor, and wikilinks", (t) => {

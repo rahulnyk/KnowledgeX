@@ -229,7 +229,10 @@ export function localLinks(note: Note, root: string): string[] {
   }
   for (const match of text.matchAll(WIKILINK)) {
     const target = wikiTarget(match[1]);
-    if (target) links.push(rel(join(root, target), root)); // a wikilink names a note in the same notebook
+    if (!target) continue;
+    // A wikilink names a note in the same notebook: at its top level, or in the linking note's own subfolder.
+    const sibling = join(dirname(note.path), target);
+    links.push(rel(existsSync(join(root, target)) || !existsSync(sibling) ? join(root, target) : sibling, root));
   }
   return links;
 }
