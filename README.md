@@ -133,11 +133,13 @@ Two habits are worth making explicit. Unless your AI is told to, it may answer a
 I use KnowledgeX as my knowledge library. Search it when my past decisions or preferences matter, and offer to save anything worth keeping when it comes up. Save only what I approve.
 ```
 
-**Working on one client or project?** Notes can live in their own notebook. Name it in that project's instructions, such as a Claude Project or a `CLAUDE.md` or `AGENTS.md` file in a repository:
+**Working on one client or project?** Notes can live in their own notebook. Add this to that project's instructions, such as a Claude Project or a `CLAUDE.md` or `AGENTS.md` file in a repository. It works unchanged in every project, because the notebook is named after the project:
 
 ```
-Use the KnowledgeX notebook acme-case for this project. Search it before answering questions about this client, and save new notes there.
+Use the KnowledgeX notebook named after this project: the project's name (or its folder or repository name), in lowercase with hyphens, such as project-alpha. Search it before answering questions about this project, and save new notes there. If that notebook doesn't exist yet, ask me before starting it.
 ```
+
+To pick the notebook yourself instead, replace the first sentence with *Use the KnowledgeX notebook project-alpha for this project.*
 
 To go further and keep a connection to a single notebook, so nothing else is visible to it, see `KX_NOTEBOOK` in the [technical guide](docs/technical.md#settings).
 
@@ -165,7 +167,7 @@ Most of the time nothing is worth keeping, and it says nothing. You can also jus
 
 **A check-up.** Ask _"Do any of my notes need attention?"_ Your AI lists notes that may be out of date, conflict with each other, or were never confirmed, and suggests fixes.
 
-**Notebooks.** Keep a client or project in its own notebook: say _"start a notebook for the Acme case."_ Everything else goes in the `general` notebook. To share a notebook, send its folder. To add one you received, drop the folder into your notes folder. Notes someone else confirmed start unconfirmed for you, until you confirm them yourself.
+**Notebooks.** Keep a client or project in its own notebook: say _"start a notebook for Project Alpha."_ Everything else goes in the `general` notebook. To share a notebook, send its folder. To add one you received, drop the folder into your notes folder. Notes someone else confirmed start unconfirmed for you, until you confirm them yourself.
 
 ## Your notes and your privacy
 
