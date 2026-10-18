@@ -67,17 +67,17 @@ KnowledgeX/                 the library
   index.md                  generated list of notebooks
   .knowledgex.json          confirmations made in this library, note fingerprints, and which notebooks were received
   general/                  the default notebook
-  acme-case/
+  project-alpha/
 ```
 
 - **Add a notebook** by copying its folder into the library, or with `kx add FOLDER [--name NAME]`, which also checks it and refuses names already taken. It is picked up on the next tool call.
 - **Share a notebook** by copying its folder. `.knowledgex.json` stays behind.
 - **Trust doesn't travel with copies.** A confirmation counts only if it was made in this library and is recorded in `.knowledgex.json`. Confirmations that came with a copied notebook are still shown, but its notes count as unconfirmed until confirmed here. Losing `.knowledgex.json` has the same effect on every notebook. KnowledgeX writes it through a temporary file under a lock, so a crash or two apps writing at once can't damage it. If it can't be read anyway, it is set aside as `.knowledgex.json.unreadable-<time>` rather than overwritten, so its records can be restored. A bundle used directly with `--bundle` has no library, so its confirmations count as written.
-- **Pick a notebook per project** in the project's instructions (a Claude Desktop Project, `AGENTS.md`, or `CLAUDE.md`): *Use the KnowledgeX notebook acme-case.*
+- **Pick a notebook per project** in the project's instructions (a Claude Desktop Project, `AGENTS.md`, or `CLAUDE.md`): *Use the KnowledgeX notebook project-alpha.*
 - **Hard boundary:** a connection with `KX_NOTEBOOK` set only sees that notebook, for example:
 
 ```bash
-claude mcp add knowledgex-acme --env KX_NOTEBOOK=acme-case -- npx -y knowledgex mcp
+claude mcp add knowledgex-alpha --env KX_NOTEBOOK=project-alpha -- npx -y knowledgex mcp
 ```
 
 ---

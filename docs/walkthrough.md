@@ -108,9 +108,9 @@ Claude lists notes that may be out of date, notes that conflict, and notes you'v
 
 Your notes live in **notebooks**. Everything goes in one called **general** until you want more. (If you've heard of the Open Knowledge Format: each notebook is an OKF bundle, a standard folder of notes that other tools can read.)
 
-- **Start a notebook for a client or project.** Say *"start a notebook for the Acme case."* Claude may also suggest one, and always asks before creating it.
-- **Claude tells you where each note goes.** Once you have more than one notebook, every suggestion names the notebook, such as *"I'd keep this in your Acme notebook."* If Claude isn't sure, it asks you which one.
-- **Keep a Claude Project's chats in its notebook.** Add a line to the project's instructions, such as: *Use the KnowledgeX notebook acme-case.*
+- **Start a notebook for a client or project.** Say *"start a notebook for Project Alpha."* Claude may also suggest one, and always asks before creating it.
+- **Claude tells you where each note goes.** Once you have more than one notebook, every suggestion names the notebook, such as *"I'd keep this in your Project Alpha notebook."* If Claude isn't sure, it asks you which one.
+- **Keep a Claude Project's chats in its notebook.** Add a line to the project's instructions, such as: *Use the KnowledgeX notebook project-alpha.*
 - **Share a notebook.** Each notebook is a folder inside your notes folder. Zip that folder and send it.
 - **Add a notebook someone sent you.** Unzip it and drag the folder into your notes folder. Claude finds it in your next chat.
 - **Notes you receive start unconfirmed.** Even if the sender confirmed them, that doesn't count for you. Claude tells you who confirmed a note before, and asks before relying on it. Confirm the ones you agree with.
